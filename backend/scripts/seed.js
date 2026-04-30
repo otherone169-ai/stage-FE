@@ -1,0 +1,95 @@
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import pool from "../src/config/db.js";
+import { logger } from "../src/utils/logger.js";
+
+dotenv.config();
+
+const run = async () => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const adminEmail = "admin@platform.local";
+    const studentEmail = "student@platform.local";
+    const companyEmail = "company@platform.local";
+
+    const adminPwd = await bcrypt.hash("Admin123!", 10);
+    const studentPwd = await bcrypt.hash("Student123!", 10);
+    const companyPwd = await bcrypt.hash("Company123!", 10);
+
+    const admin = await client.query(
+      `INSERT INTO users (email, password_hash, role, is_active)
+       VALUES ($1, $2, 'admin', true)
+       ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+       RETURNING id`,
+      [adminEmail, adminPwd]
+    );
+
+    const studentUser = await client.query(
+      `INSERT INTO users (email, password_hash, role, is_active)
+       VALUES ($1, $2, 'student', true)
+       ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+       RETURNING id`,
+      [studentEmail, studentPwd]
+    );
+
+    const companyUser = await client.query(
+      `INSERT INTO users (email, password_hash, role, is_active)
+       VALUES ($1, $2, 'company', true)
+       ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+       RETURNING id`,
+      [companyEmail, companyPwd]
+    );
+
+    const student = await client.query(
+      `INSERT INTO students (user_id, full_name, phone, education, skills, experience, profile_completed)
+       VALUES ($1, 'Demo Student', '0600000000', 'Computer Science', 'react,node,postgresql', '1 year projects', true)
+       ON CONFLICT (user_id) DO UPDATE SET full_name = EXCLUDED.full_name
+       RETURNING id`,
+      [studentUser.rows[0].id]
+    );
+
+    const company = await client.query(
+      `INSERT INTO companies (user_id, name, description, location, website)
+       VALUES ($1, 'Demo Company', 'Internship-focused company', 'Casablanca', 'https://demo-company.local')
+       ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name
+       RETURNING id`,
+      [companyUser.rows[0].id]
+    );
+
+    const internship = await client.query(
+      `INSERT INTO internships
+       (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
+       VALUES ($1, 'Full-stack Intern', 'Build web features', 'Casablanca', '6 months', 'Web', 'React and Node basics', 'react,node,sql', 'approved', true)
+       RETURNING id`,
+      [company.rows[0].id]
+    );
+
+    await client.query(
+      `INSERT INTO applications (student_id, internship_id, status)
+       VALUES ($1, $2, 'pending')
+       ON CONFLICT (student_id, internship_id) DO NOTHING`,
+      [student.rows[0].id, internship.rows[0].id]
+    );
+
+    await client.query("COMMIT");
+
+    logger.info("seed_completed", {
+      adminEmail,
+      studentEmail,
+      companyEmail
+    });
+    void admin;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    logger.error("seed_failed", { message: error.message });
+    process.exitCode = 1;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+};
+
+run();

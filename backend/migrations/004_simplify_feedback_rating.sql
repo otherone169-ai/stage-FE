@@ -1,0 +1,2 @@
+ALTER TABLE feedbacks
+  ALTER COLUMN rating DROP NOT NULL;
