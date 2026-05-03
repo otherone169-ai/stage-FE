@@ -14,6 +14,7 @@ import supervisorRoutes from "./routes/v2/supervisorRoutes.js";
 import projectRoutes from "./routes/v2/projectRoutes.js";
 import taskRoutes from "./routes/v2/taskRoutes.js";
 import reportRoutes from "./routes/v2/reportRoutes.js";
+import workflowRoutes from "./routes/v2/workflowRoutes.js";
 import { errorHandler, notFound } from "./middlewares/errorMiddleware.js";
 import { requestContext } from "./middlewares/requestContext.js";
 
@@ -46,6 +47,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/workflow", workflowRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

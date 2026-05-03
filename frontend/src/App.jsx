@@ -8,6 +8,7 @@ import AdminStudentsPage from "./pages/AdminStudentsPage";
 import CompanyInternsPage from "./pages/CompanyInternsPage";
 import CompanyInternshipsPage from "./pages/CompanyInternshipsPage";
 import CompanyApplicationsPage from "./pages/CompanyApplicationsPage";
+import CompanySupervisorsPage from "./pages/CompanySupervisorsPage";
 import CompanyProfilePage from "./pages/CompanyProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -24,6 +25,13 @@ import SupervisorProfilePage from "./pages/SupervisorProfilePage";
 import SupervisorsPage from "./pages/SupervisorsPage";
 import TasksPage from "./pages/TasksPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import SupervisorInternshipsPage from "./pages/SupervisorInternshipsPage";
+import SupervisorStudentsPage from "./pages/SupervisorStudentsPage";
+import StudentAcceptancePage from "./pages/StudentAcceptancePage";
+import WeeklyFollowUpPage from "./pages/WeeklyFollowUpPage";
+import EnhancedDashboardPage from "./pages/EnhancedDashboardPage";
+import MyProjectPage from "./pages/MyProjectPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 const App = () => (
   <Routes>
@@ -145,6 +153,14 @@ const App = () => (
         }
       />
       <Route
+        path="company/supervisors"
+        element={
+          <ProtectedRoute allowedRoles={["company"]}>
+            <CompanySupervisorsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="supervisor/profile"
         element={
           <ProtectedRoute allowedRoles={["supervisor"]}>
@@ -165,6 +181,62 @@ const App = () => (
         element={
           <ProtectedRoute allowedRoles={["student", "supervisor"]}>
             <TasksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="supervisor/internships"
+        element={
+          <ProtectedRoute allowedRoles={["supervisor"]}>
+            <SupervisorInternshipsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="supervisor/internships/:internshipId/students"
+        element={
+          <ProtectedRoute allowedRoles={["supervisor"]}>
+            <SupervisorStudentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="student/my-project"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <MyProjectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="student/acceptance"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentAcceptancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="student/weekly-followup"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <WeeklyFollowUpPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="enhanced-dashboard"
+        element={
+          <ProtectedRoute>
+            <EnhancedDashboardPage />
           </ProtectedRoute>
         }
       />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import apiClient from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
@@ -12,8 +13,22 @@ const taskStatusOptions = [
 const emptyTaskForm = { title: "", description: "", projectId: "", deadline: "" };
 const emptyProgressForm = { status: "in_progress", progress: "", fileUrl: "" };
 
+const getStatusBadgeColor = (status) => {
+  switch (status) {
+    case "todo":
+      return "#999"; // grey
+    case "in_progress":
+      return "#2563eb"; // blue
+    case "done":
+      return "#10b981"; // green
+    default:
+      return "#666";
+  }
+};
+
 const TasksPage = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -23,13 +38,29 @@ const TasksPage = () => {
   const [form, setForm] = useState(emptyTaskForm);
   const [progressForm, setProgressForm] = useState(emptyProgressForm);
   const [remarkContent, setRemarkContent] = useState("");
+  const [transitionLoading, setTransitionLoading] = useState(false);
 
   const isSupervisor = user?.role === "supervisor";
   const isStudent = user?.role === "student";
+  const taskCounts = tasks.reduce(
+    (accumulator, task) => {
+      accumulator.total += 1;
+      if (task.status === "todo") accumulator.todo += 1;
+      if (task.status === "in_progress") accumulator.inProgress += 1;
+      if (task.status === "done") accumulator.done += 1;
+      return accumulator;
+    },
+    { total: 0, todo: 0, inProgress: 0, done: 0 }
+  );
 
   const loadRemarks = async (taskId) => {
-    const { data } = await apiClient.get(`/tasks/${taskId}/remarks`);
-    setRemarks(Array.isArray(data) ? data : []);
+    try {
+      const { data } = await apiClient.get(`/tasks/${taskId}/remarks`);
+      setRemarks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error loading remarks:", err);
+      setRemarks([]);
+    }
   };
 
   const loadData = async () => {
@@ -42,8 +73,35 @@ const TasksPage = () => {
       ]);
       setTasks(tasksRes.data);
       setProjects(projectsRes.data);
+
+      // Handle deep linking: if taskId query param exists, select that task
+      const taskIdParam = searchParams.get("taskId");
+      if (taskIdParam) {
+        const task = tasksRes.data.find(t => t.id === taskIdParam);
+        if (task) {
+          setSelectedTask(task);
+          setProgressForm((current) => ({ ...current, status: task.status }));
+          await loadRemarks(task.id);
+          
+          // Mark notification as read (best effort, don't block)
+          const notificationId = searchParams.get("notificationId");
+          if (notificationId) {
+            try {
+              await apiClient.patch(`/workflow/notifications/${notificationId}/read`);
+            } catch (e) {
+              console.error("Error marking notification as read:", e);
+            }
+          }
+        } else {
+          setError("Tâche non trouvée");
+        }
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Erreur de chargement des taches");
+      if (err.response?.status === 401) {
+        setError("Votre session a expiré. Veuillez vous reconnecter.");
+      } else {
+        setError(err.response?.data?.message || "Erreur de chargement des taches");
+      }
     } finally {
       setLoading(false);
     }
@@ -81,16 +139,39 @@ const TasksPage = () => {
     }
   };
 
-  const handleStatusChange = async (taskId, status) => {
+  const handleStartTask = async (taskId) => {
     try {
-      if (isStudent) {
-        await apiClient.post(`/students/tasks/${taskId}/updates`, { status, progress: "" });
-      } else {
-        await apiClient.patch(`/tasks/${taskId}/status`, { status });
+      setTransitionLoading(true);
+      setError("");
+      const result = await apiClient.patch(`/tasks/${taskId}/transition/start`);
+      // Update selectedTask
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(result.data);
       }
+      // Reload tasks list
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.message || "Mise a jour du statut impossible");
+      setError(err.response?.data?.message || "Impossible de démarrer la tâche");
+    } finally {
+      setTransitionLoading(false);
+    }
+  };
+
+  const handleFinishTask = async (taskId) => {
+    try {
+      setTransitionLoading(true);
+      setError("");
+      const result = await apiClient.patch(`/tasks/${taskId}/transition/done`);
+      // Update selectedTask
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(result.data);
+      }
+      // Reload tasks list
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Impossible de terminer la tâche");
+    } finally {
+      setTransitionLoading(false);
     }
   };
 
@@ -153,177 +234,253 @@ const TasksPage = () => {
   if (loading) return <LoadingSpinner label="Chargement des taches..." />;
 
   return (
-    <div className="page-grid">
-      {isSupervisor && (
-        <section className="card">
-          <h3>Ajouter une tache</h3>
-          <form className="stack-form" onSubmit={handleCreate}>
-            <input
-              placeholder="Titre"
-              value={form.title}
-              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-            />
-            <select
-              value={form.projectId}
-              onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
-              required
-            >
-              <option value="">Selectionner un stage</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.internship_title || project.title}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={form.deadline}
-              onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
-            />
-            <button type="submit" className="primary-btn">
-              Ajouter la tache
-            </button>
-          </form>
-        </section>
-      )}
+    <div className="tasks-page">
+      <section className="card tasks-hero">
+        <div>
+          <p className="section-kicker">📝 Tâches</p>
+          <h2>{isStudent ? "Mes tâches" : "Suivi des tâches"}</h2>
+          <p className="section-subtitle">
+            Suivez l'avancement, commentez les livrables et gardez un historique clair des actions sur chaque stage.
+          </p>
+        </div>
 
-      <section className="card">
-        <h3>{isStudent ? "Mes taches" : "Suivi des taches"}</h3>
-        {error && <p className="form-error">{error}</p>}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Titre</th>
-                <th>Stage</th>
-                <th>Statut</th>
-                <th>Echeance</th>
-                <th>Commentaires</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => (
-                <tr key={task.id}>
-                  <td>{task.title}</td>
-                  <td>{task.internship_title || task.project_title}</td>
-                  <td>
-                    <select value={task.status} onChange={(e) => handleStatusChange(task.id, e.target.value)}>
-                      {taskStatusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>{task.deadline ? new Date(task.deadline).toLocaleDateString() : "-"}</td>
-                  <td>{task.remark_count ?? 0}</td>
-                  <td>
-                    <div className="inline-actions">
-                      <button type="button" className="secondary-btn small" onClick={() => selectTask(task)}>
-                        Ouvrir
-                      </button>
-                      {isSupervisor && (
-                        <>
-                          <button type="button" className="secondary-btn small" onClick={() => handleTaskEdit(task)}>
-                            Modifier
-                          </button>
-                          <button type="button" className="danger-btn small" onClick={() => handleTaskDelete(task)}>
-                            Supprimer
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="task-metrics">
+          <div>
+            <strong>{taskCounts.total}</strong>
+            <span>Total</span>
+          </div>
+          <div>
+            <strong>{taskCounts.todo}</strong>
+            <span>À faire</span>
+          </div>
+          <div>
+            <strong>{taskCounts.inProgress}</strong>
+            <span>En cours</span>
+          </div>
+          <div>
+            <strong>{taskCounts.done}</strong>
+            <span>Terminées</span>
+          </div>
         </div>
       </section>
 
-      {selectedTask && (
-        <section className="card">
-          <h3>{selectedTask.title}</h3>
-
-          {isStudent && (
-            <form className="stack-form" onSubmit={handleProgressSubmit}>
-              <label>Progression</label>
-              <textarea
-                placeholder="Detaillez votre avancement"
-                value={progressForm.progress}
-                onChange={(e) => setProgressForm((prev) => ({ ...prev, progress: e.target.value }))}
+      <div className="tasks-layout">
+        {isSupervisor && (
+          <section className="card task-form-card">
+            <h3>Ajouter une tache</h3>
+            <form className="stack-form" onSubmit={handleCreate}>
+              <input
+                placeholder="Titre"
+                value={form.title}
+                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                required
               />
-              <label>Statut</label>
+              <textarea
+                placeholder="Description"
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              />
               <select
-                value={progressForm.status}
-                onChange={(e) => setProgressForm((prev) => ({ ...prev, status: e.target.value }))}
+                value={form.projectId}
+                onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
+                required
               >
-                {taskStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">Selectionner un stage</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.internship_title || project.title}
                   </option>
                 ))}
               </select>
               <input
-                placeholder="Lien de livrable optionnel"
-                value={progressForm.fileUrl}
-                onChange={(e) => setProgressForm((prev) => ({ ...prev, fileUrl: e.target.value }))}
+                type="date"
+                value={form.deadline}
+                onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
               />
               <button type="submit" className="primary-btn">
-                Envoyer la progression
+                Ajouter la tache
               </button>
             </form>
-          )}
+          </section>
+        )}
 
-          <form className="stack-form" onSubmit={handleRemarkSubmit}>
-            <label>Commentaire</label>
-            <textarea
-              placeholder="Ajouter un commentaire"
-              value={remarkContent}
-              onChange={(e) => setRemarkContent(e.target.value)}
-              required
-            />
-            <button type="submit" className="secondary-btn">
-              Ajouter le commentaire
-            </button>
-          </form>
-
-          <div className="table-wrap">
+        <section className="card task-table-card">
+          <div className="task-table-header">
+            <h3>{isStudent ? "Mes tâches" : "Suivi des tâches"}</h3>
+            <span className="task-table-hint">Cliquez sur Ouvrir pour voir les commentaires et la progression.</span>
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <div className="table-wrap task-table-shell">
             <table>
               <thead>
                 <tr>
-                  <th>Auteur</th>
-                  <th>Role</th>
-                  <th>Commentaire</th>
-                  <th>Date</th>
+                  <th>Titre</th>
+                  <th>Stage</th>
+                  <th>Statut</th>
+                  <th>Echeance</th>
+                  <th>Commentaires</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {remarks.map((remark) => (
-                  <tr key={remark.id}>
-                    <td>{remark.email}</td>
-                    <td>{remark.user_role}</td>
-                    <td>{remark.content}</td>
-                    <td>{new Date(remark.created_at).toLocaleString()}</td>
+                {tasks.map((task) => (
+                  <tr key={task.id}>
+                    <td>
+                      <strong>{task.title}</strong>
+                      <div className="muted-cell">{task.description || "Aucune description"}</div>
+                    </td>
+                    <td>{task.internship_title || task.project_title}</td>
+                    <td>
+                      <span 
+                        className="status-badge" 
+                        style={{ 
+                          backgroundColor: getStatusBadgeColor(task.status),
+                          color: "white",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          fontWeight: "600"
+                        }}
+                      >
+                        {task.status === "todo" && "À faire"}
+                        {task.status === "in_progress" && "En cours"}
+                        {task.status === "done" && "Terminée"}
+                      </span>
+                    </td>
+                    <td>{task.deadline ? new Date(task.deadline).toLocaleDateString() : "-"}</td>
+                    <td>{task.remark_count ?? 0}</td>
+                    <td>
+                      <div className="inline-actions">
+                        <button type="button" className="secondary-btn small" onClick={() => selectTask(task)}>
+                          Ouvrir
+                        </button>
+                        {isSupervisor && (
+                          <>
+                            <button type="button" className="secondary-btn small" onClick={() => handleTaskEdit(task)}>
+                              Modifier
+                            </button>
+                            <button type="button" className="danger-btn small" onClick={() => handleTaskDelete(task)}>
+                              Supprimer
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
-                {remarks.length === 0 && (
-                  <tr>
-                    <td colSpan={4}>Aucun commentaire.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </section>
-      )}
+
+        {selectedTask && (
+          <section className="card task-detail-card">
+            <div className="task-detail-header">
+              <div>
+                <p className="section-kicker">Détails</p>
+                <h3>{selectedTask.title}</h3>
+              </div>
+              <span 
+                className="cv-badge" 
+                style={{ 
+                  backgroundColor: getStatusBadgeColor(selectedTask.status),
+                  color: "white"
+                }}
+              >
+                {selectedTask.status === "todo" && "À faire"}
+                {selectedTask.status === "in_progress" && "En cours"}
+                {selectedTask.status === "done" && "Terminée"}
+              </span>
+            </div>
+
+            {isStudent && (
+              <div className="task-actions">
+                {selectedTask.status === "todo" && (
+                  <button 
+                    type="button" 
+                    className="primary-btn"
+                    onClick={() => handleStartTask(selectedTask.id)}
+                    disabled={transitionLoading}
+                  >
+                    {transitionLoading ? "⏳ Démarrage..." : "▶️ Démarrer"}
+                  </button>
+                )}
+                {selectedTask.status === "in_progress" && (
+                  <button 
+                    type="button" 
+                    className="primary-btn"
+                    onClick={() => handleFinishTask(selectedTask.id)}
+                    disabled={transitionLoading}
+                  >
+                    {transitionLoading ? "⏳ Terminaison..." : "✓ Terminer"}
+                  </button>
+                )}
+                {selectedTask.status === "done" && (
+                  <div className="status-completed">
+                    ✅ Tâche terminée
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isStudent && (
+              <form className="stack-form" onSubmit={handleProgressSubmit}>
+                <h4>Mise à jour de progression</h4>
+                <textarea
+                  placeholder="Détails de progression"
+                  value={progressForm.progress}
+                  onChange={(e) => setProgressForm((prev) => ({ ...prev, progress: e.target.value }))}
+                />
+                <input
+                  type="text"
+                  placeholder="Lien du fichier livrable (optionnel)"
+                  value={progressForm.fileUrl}
+                  onChange={(e) => setProgressForm((prev) => ({ ...prev, fileUrl: e.target.value }))}
+                />
+                <button type="submit" className="primary-btn">
+                  Mettre à jour la progression
+                </button>
+              </form>
+            )}
+
+            <div>
+              <p className="section-kicker">Description</p>
+              <p>{selectedTask.description || "Aucune description"}</p>
+            </div>
+
+            <div>
+              <p className="section-kicker">Commentaires ({remarks.length})</p>
+              <form className="stack-form" onSubmit={handleRemarkSubmit}>
+                <textarea
+                  placeholder="Ajouter un commentaire..."
+                  value={remarkContent}
+                  onChange={(e) => setRemarkContent(e.target.value)}
+                  required
+                />
+                <button type="submit" className="primary-btn">
+                  Ajouter un commentaire
+                </button>
+              </form>
+
+              {remarks.length === 0 ? (
+                <p className="muted-cell">Aucun commentaire pour le moment.</p>
+              ) : (
+                <div className="remarks-list">
+                  {remarks.map((remark) => (
+                    <div key={remark.id} className="remark-item">
+                      <strong>{remark.author_name || "Anonyme"}</strong>
+                      <small>
+                        {new Date(remark.created_at).toLocaleDateString()} {new Date(remark.created_at).toLocaleTimeString()}
+                      </small>
+                      <p>{remark.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 };

@@ -5,6 +5,8 @@ import {
   getTaskDetails,
   updateTask,
   updateTaskStatus,
+  startTask,
+  finishTask,
   deleteTask,
   addRemark,
   listTaskRemarks,
@@ -25,7 +27,14 @@ router.post("/", authenticate, authorize("supervisor"), validate(createTaskSchem
 router.get("/", authenticate, authorize("supervisor", "student"), listTasks);
 router.get("/:id", authenticate, authorize("supervisor", "student"), getTaskDetails);
 router.patch("/:id", authenticate, authorize("supervisor"), validate(updateTaskSchema), updateTask);
+
+// Task State Transitions (student only)
+router.patch("/:id/transition/start", authenticate, authorize("student"), startTask);
+router.patch("/:id/transition/done", authenticate, authorize("student"), finishTask);
+
+// DEPRECATED: Use /transition/start or /transition/done instead
 router.patch("/:id/status", authenticate, authorize("supervisor", "student"), validate(updateStatusSchema), updateTaskStatus);
+
 router.delete("/:id", authenticate, authorize("supervisor"), deleteTask);
 
 // Task Remarks (both supervisor and student)

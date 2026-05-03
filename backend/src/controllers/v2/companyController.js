@@ -1,6 +1,6 @@
-import { query } from "../../config/db.js";
+import bcrypt from "bcryptjs";
+import pool, { query } from "../../config/db.js";
 import { logAudit } from "../../utils/audit.js";
-
 export const getMyCompanyProfile = async (req, res, next) => {
   try {
     const result = await query("SELECT * FROM companies WHERE user_id = $1", [req.user.id]);
@@ -105,5 +105,89 @@ export const updateCompanyInternStatus = async (req, res, next) => {
     return res.json(result.rows[0]);
   } catch (error) {
     return next(error);
+  }
+};
+
+// I just did step 3
+export const listMySupervisors = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT s.id, s.full_name, s.position, s.company_id, s.created_at, u.email
+       FROM supervisors s
+       JOIN users u ON u.id = s.user_id
+       JOIN companies c ON c.id = s.company_id
+       WHERE c.user_id = $1
+       ORDER BY s.created_at DESC`,
+      [req.user.id]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const createSupervisorForCompany = async (req, res, next) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const companyResult = await client.query(
+      "SELECT id FROM companies WHERE user_id = $1",
+      [req.user.id]
+    );
+
+    if (companyResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Company profile not found" });
+    }
+
+    const exists = await client.query(
+      "SELECT id FROM users WHERE email = $1",
+      [req.body.email]
+    );
+
+    if (exists.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ message: "Email already exists" });
+    }
+
+    const passwordHash = await bcrypt.hash(req.body.password, 10);
+
+    const userResult = await client.query(
+      `INSERT INTO users (email, password_hash, role, is_active, is_email_verified)
+       VALUES ($1, $2, 'supervisor', true, true)
+       RETURNING id, email`,
+      [req.body.email, passwordHash]
+    );
+
+    const supervisorResult = await client.query(
+      `INSERT INTO supervisors (user_id, company_id, full_name, position)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, user_id, company_id, full_name, position, created_at`,
+      [
+        userResult.rows[0].id,
+        companyResult.rows[0].id,
+        req.body.fullName,
+        req.body.position || null
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    await logAudit(req.user.id, "COMPANY_SUPERVISOR_CREATED", {
+      supervisorId: supervisorResult.rows[0].id
+    });
+
+    return res.status(201).json({
+      ...supervisorResult.rows[0],
+      email: userResult.rows[0].email
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    return next(error);
+  } finally {
+    client.release();
   }
 };

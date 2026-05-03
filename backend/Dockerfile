@@ -6,6 +6,8 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
+COPY scripts ./scripts
+COPY migrations ./migrations
 
 EXPOSE 5000
 

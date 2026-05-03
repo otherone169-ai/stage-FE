@@ -23,7 +23,7 @@ const CompanyApplicationsPage = () => {
       setLoading(true);
       const [internshipsRes, supervisorsRes] = await Promise.all([
         apiClient.get("/internships/my"),
-        apiClient.get("/supervisors")
+        apiClient.get("/companies/supervisors")
       ]);
 
       const myInternships = Array.isArray(internshipsRes.data) ? internshipsRes.data : [];
