@@ -64,12 +64,13 @@ const StudentProfilePage = () => {
     }
   };
 
-  const uploadCv = async () => {
+  const uploadCv = async (e) => {
+    e.preventDefault();
     setError("");
     setMessage("");
 
     if (!cvFile) {
-      setError("Please select a CV file first");
+      setError("Please select a CV file to upload.");
       return;
     }
 
@@ -78,16 +79,9 @@ const StudentProfilePage = () => {
       const formData = new FormData();
       formData.append("cv", cvFile);
 
-      const { data } = await apiClient.post("/students/me/cv", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      setProfile((current) => ({
-        ...current,
-        cvUrl: data.profile?.cv_url || current?.cvUrl || ""
-      }));
+      const { data } = await apiClient.post("/students/upload-cv", formData);
+      setMessage(data.message || "CV uploaded successfully.");
       setCvFile(null);
-      setMessage("CV uploaded.");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to upload CV");
     } finally {
@@ -95,61 +89,142 @@ const StudentProfilePage = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner label="Loading student profile..." />;
+  if (loading) return <LoadingSpinner label="Chargement du profil étudiant..." />;
 
   return (
-    <div className="page-grid">
-      <section className="card">
-        <h3>Student Profile</h3>
-        <p className="card-meta">Keep your student profile and CV ready before applying.</p>
-        {error && <p className="form-error">{error}</p>}
-        {message && <p className="form-success">{message}</p>}
-        <form className="stack-form" onSubmit={save}>
-          <input
-            placeholder="Full name"
-            value={profile?.fullName || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
-          />
-          <input
-            placeholder="Phone"
-            value={profile?.phone || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-          />
-          <textarea
-            placeholder="Education"
-            value={profile?.education || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, education: e.target.value }))}
-          />
-          <textarea
-            placeholder="Experience"
-            value={profile?.experience || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, experience: e.target.value }))}
-          />
-          <input
-            placeholder="Skills (comma separated)"
-            value={profile?.skills || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, skills: e.target.value }))}
-          />
-          <input
-            placeholder="CV URL"
-            value={profile?.cvUrl || ""}
-            onChange={(e) => setProfile((p) => ({ ...p, cvUrl: e.target.value }))}
-          />
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-          />
-          <button className="secondary-btn" type="button" onClick={uploadCv} disabled={isUploadingCv}>
-            {isUploadingCv ? "Uploading..." : "Upload CV"}
-          </button>
-          <button className="primary-btn" type="submit" disabled={isSavingProfile}>
-            {isSavingProfile ? "Saving..." : "Save Profile"}
-          </button>
-        </form>
+    <div className="page-grid page-grid-stack">
+      <section className="card profile-header-card">
+        <div className="profile-header-content">
+          <div className="profile-avatar-section">
+            <div className="student-avatar">
+              <span className="avatar-icon">👨‍🎓</span>
+            </div>
+            <div className="profile-title">
+              <h2>Mon Profil Étudiant</h2>
+              <p className="profile-subtitle">Gérez vos informations académiques et professionnelles</p>
+            </div>
+          </div>
+          <div className="profile-status">
+            <span className="role-badge student-role">
+              <span className="role-icon">👨‍🎓</span>
+              Étudiant
+            </span>
+          </div>
+        </div>
       </section>
 
-      <PasswordChangeCard email={user?.email} />
+      <div className="profile-content-grid">
+        <section className="card profile-form-card">
+          <div className="card-header">
+            <h3>Informations Académiques</h3>
+            <p className="card-description">Mettez à jour votre formation et compétences</p>
+          </div>
+          
+          {error && <div className="form-error">⚠️ {error}</div>}
+          {message && <div className="form-success">✅ {message}</div>}
+          
+          <form onSubmit={save} className="profile-form">
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="fullName" className="form-label">
+                  <span className="label-icon">👤</span>
+                  Nom complet
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={profile?.fullName || ""}
+                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                  className="form-input"
+                  placeholder="Entrez votre nom complet"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="phone" className="form-label">
+                  <span className="label-icon">📱</span>
+                  Téléphone
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={profile?.phone || ""}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  className="form-input"
+                  placeholder="Entrez votre numéro de téléphone"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="education" className="form-label">
+                  <span className="label-icon">🎓</span>
+                  Formation
+                </label>
+                <textarea
+                  id="education"
+                  value={profile?.education || ""}
+                  onChange={(e) => setProfile({ ...profile, education: e.target.value })}
+                  className="form-textarea"
+                  placeholder="Décrivez votre formation"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="experience" className="form-label">
+                  <span className="label-icon">💼</span>
+                  Expérience
+                </label>
+                <textarea
+                  id="experience"
+                  value={profile?.experience || ""}
+                  onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+                  className="form-textarea"
+                  placeholder="Décrivez votre expérience professionnelle"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="skills" className="form-label">
+                  <span className="label-icon">🔧</span>
+                  Compétences
+                </label>
+                <textarea
+                  id="skills"
+                  value={profile?.skills || ""}
+                  onChange={(e) => setProfile({ ...profile, skills: e.target.value })}
+                  className="form-textarea"
+                  placeholder="Listez vos compétences (séparées par des virgules)"
+                  rows={3}
+                />
+                <div className="field-hint">
+                  <span className="hint-icon">💡</span>
+                  Séparez les compétences par des virgules
+                </div>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="primary-btn update-btn" disabled={isSavingProfile}>
+                <span className="btn-icon">💾</span>
+                {isSavingProfile ? "Mise à jour..." : "Mettre à jour"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <PasswordChangeCard />
+      </div>
     </div>
   );
 };

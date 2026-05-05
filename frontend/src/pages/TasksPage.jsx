@@ -31,6 +31,8 @@ const TasksPage = () => {
   const [searchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [editForm, setEditForm] = useState({ title: "", description: "" });
+  const [isEditing, setIsEditing] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [remarks, setRemarks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -201,19 +203,34 @@ const TasksPage = () => {
     }
   };
 
-  const handleTaskEdit = async (task) => {
-    const title = window.prompt("Titre de la tache", task.title);
-    if (title === null) return;
+  const handleTaskEdit = (task) => {
+    setSelectedTask(task);
+    setEditForm({ title: task.title, description: task.description || "" });
+    setIsEditing(true);
+  };
 
-    const description = window.prompt("Description", task.description || "");
-    if (description === null) return;
+  const handleTaskEditSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedTask) return;
 
     try {
-      await apiClient.patch(`/tasks/${task.id}`, { title, description });
+      await apiClient.patch(`/tasks/${selectedTask.id}`, { 
+        title: editForm.title, 
+        description: editForm.description 
+      });
+      setIsEditing(false);
       await loadData();
+      // Update selected task with new data
+      const updatedTask = { ...selectedTask, title: editForm.title, description: editForm.description };
+      setSelectedTask(updatedTask);
     } catch (err) {
-      setError(err.response?.data?.message || "Modification de tache impossible");
+      setError(err.response?.data?.message || "Modification de tâche impossible");
     }
+  };
+
+  const handleTaskEditCancel = () => {
+    setIsEditing(false);
+    setEditForm({ title: "", description: "" });
   };
 
   const handleTaskDelete = async (task) => {
@@ -240,7 +257,7 @@ const TasksPage = () => {
           <p className="section-kicker">📝 Tâches</p>
           <h2>{isStudent ? "Mes tâches" : "Suivi des tâches"}</h2>
           <p className="section-subtitle">
-            Suivez l'avancement, commentez les livrables et gardez un historique clair des actions sur chaque stage.
+            Suivez l'avancement, commentez les livrables et gardez un historique clair des actions sur chaque projet.
           </p>
         </div>
 
@@ -267,39 +284,107 @@ const TasksPage = () => {
       <div className="tasks-layout">
         {isSupervisor && (
           <section className="card task-form-card">
-            <h3>Ajouter une tache</h3>
-            <form className="stack-form" onSubmit={handleCreate}>
-              <input
-                placeholder="Titre"
-                value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                required
-              />
-              <textarea
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              />
-              <select
-                value={form.projectId}
-                onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
-                required
-              >
-                <option value="">Selectionner un stage</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.internship_title || project.title}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={form.deadline}
-                onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
-              />
-              <button type="submit" className="primary-btn">
-                Ajouter la tache
+            <h3 style={{ marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>Ajouter une tâche</h3>
+            <form className="task-form" onSubmit={handleCreate}>
+              <div className="form-group">
+                <label htmlFor="task-title">Titre</label>
+                <input
+                  id="task-title"
+                  placeholder="Entrez le titre de la tâche"
+                  value={form.title}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  required
+                  className="form-input"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="task-description">Description</label>
+                <textarea
+                  id="task-description"
+                  placeholder="Décrivez la tâche en détail"
+                  value={form.description}
+                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  className="form-textarea"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="task-project">Sélectionner un projet</label>
+                <select
+                  id="task-project"
+                  value={form.projectId}
+                  onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
+                  required
+                  className="form-select"
+                >
+                  <option value="">Choisissez un projet</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="task-deadline">Date d'échéance</label>
+                <input
+                  id="task-deadline"
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              
+              <button type="submit" className="task-submit-btn">
+                <span className="btn-icon">➕</span>
+                Ajouter la tâche
               </button>
+            </form>
+          </section>
+        )}
+
+        {/* Edit Task Form */}
+        {isEditing && selectedTask && (
+          <section className="card task-edit-card">
+            <h3 style={{ marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>Modifier la tâche</h3>
+            <form className="task-form" onSubmit={handleTaskEditSubmit}>
+              <div className="form-group">
+                <label htmlFor="edit-task-title">Titre</label>
+                <input
+                  id="edit-task-title"
+                  placeholder="Entrez le titre de la tâche"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                  required
+                  className="form-input"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-task-description">Description</label>
+                <textarea
+                  id="edit-task-description"
+                  placeholder="Décrivez la tâche en détail"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                  className="form-textarea"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="form-actions">
+                <button type="submit" className="task-submit-btn">
+                  <span className="btn-icon">💾</span>
+                  Enregistrer les modifications
+                </button>
+                <button type="button" className="secondary-btn" onClick={handleTaskEditCancel}>
+                  Annuler
+                </button>
+              </div>
             </form>
           </section>
         )}
@@ -315,7 +400,7 @@ const TasksPage = () => {
               <thead>
                 <tr>
                   <th>Titre</th>
-                  <th>Stage</th>
+                  <th>Projet</th>
                   <th>Statut</th>
                   <th>Echeance</th>
                   <th>Commentaires</th>
@@ -329,7 +414,7 @@ const TasksPage = () => {
                       <strong>{task.title}</strong>
                       <div className="muted-cell">{task.description || "Aucune description"}</div>
                     </td>
-                    <td>{task.internship_title || task.project_title}</td>
+                    <td>{task.project_title}</td>
                     <td>
                       <span 
                         className="status-badge" 
@@ -443,27 +528,28 @@ const TasksPage = () => {
               </form>
             )}
 
-            <div>
+            <div className="task-description-section">
               <p className="section-kicker">Description</p>
-              <p>{selectedTask.description || "Aucune description"}</p>
+              <p className="task-description-text">{selectedTask.description || "Aucune description"}</p>
             </div>
 
-            <div>
+            <div className="task-comments-section">
               <p className="section-kicker">Commentaires ({remarks.length})</p>
-              <form className="stack-form" onSubmit={handleRemarkSubmit}>
+              <form className="comment-form" onSubmit={handleRemarkSubmit}>
                 <textarea
                   placeholder="Ajouter un commentaire..."
                   value={remarkContent}
                   onChange={(e) => setRemarkContent(e.target.value)}
                   required
+                  className="comment-textarea"
                 />
-                <button type="submit" className="primary-btn">
+                <button type="submit" className="comment-submit-btn">
                   Ajouter un commentaire
                 </button>
               </form>
 
               {remarks.length === 0 ? (
-                <p className="muted-cell">Aucun commentaire pour le moment.</p>
+                <p className="no-comments">Aucun commentaire pour le moment.</p>
               ) : (
                 <div className="remarks-list">
                   {remarks.map((remark) => (

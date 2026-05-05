@@ -12,6 +12,5 @@ export const createProjectSchema = Joi.object({
         description: Joi.string().trim().allow("").optional()
       })
     )
-    .min(1)
-    .required()
+    .optional()
 });

@@ -5,6 +5,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 const AdminStudentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState({
     email: "",
@@ -67,12 +69,127 @@ const AdminStudentsPage = () => {
     }
   };
 
+  const viewStudentDetails = (row) => {
+    setSelectedStudent(row);
+    setShowStudentModal(true);
+  };
+
+  const closeStudentModal = () => {
+    setShowStudentModal(false);
+    setSelectedStudent(null);
+  };
+
   if (loading) {
     return <LoadingSpinner label="Loading students..." />;
   }
 
   return (
     <div className="page-grid page-grid-stack">
+      {/* Student Details Modal */}
+      {showStudentModal && selectedStudent && (
+        <div className="modal-overlay" onClick={closeStudentModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Détails du Stagiaire</h3>
+              <button type="button" className="modal-close-btn" onClick={closeStudentModal}>
+                ✕
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="student-details-form">
+                <div className="detail-row">
+                  <label>Nom complet</label>
+                  <input 
+                    type="text" 
+                    value={selectedStudent.full_name || "-"} 
+                    readOnly 
+                    className="detail-input"
+                  />
+                </div>
+                
+                <div className="detail-row">
+                  <label>Email</label>
+                  <input 
+                    type="email" 
+                    value={selectedStudent.email} 
+                    readOnly 
+                    className="detail-input"
+                  />
+                </div>
+                
+                <div className="detail-row">
+                  <label>Téléphone</label>
+                  <input 
+                    type="tel" 
+                    value={selectedStudent.phone || "-"} 
+                    readOnly 
+                    className="detail-input"
+                  />
+                </div>
+                
+                <div className="detail-row">
+                  <label>Éducation</label>
+                  <textarea 
+                    value={selectedStudent.education || "-"} 
+                    readOnly 
+                    className="detail-textarea"
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="detail-row">
+                  <label>Compétences</label>
+                  <textarea 
+                    value={selectedStudent.skills || "-"} 
+                    readOnly 
+                    className="detail-textarea"
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="detail-row">
+                  <label>Statut du compte</label>
+                  <div className="status-display">
+                    <span className={`status-badge ${selectedStudent.is_active ? 'active' : 'inactive'}`}>
+                      {selectedStudent.is_active ? '✅ Actif' : '⏸️ Inactif'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="detail-row">
+                  <label>Statut du profil</label>
+                  <div className="status-display">
+                    <span className={`profile-badge ${selectedStudent.profile_completed ? 'completed' : 'incomplete'}`}>
+                      {selectedStudent.profile_completed ? '✅ Complet' : '⚠️ Incomplet'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="detail-row">
+                  <label>Statistiques</label>
+                  <div className="stats-grid">
+                    <div className="stat-item">
+                      <span className="stat-number">{selectedStudent.applications_count ?? 0}</span>
+                      <span className="stat-label">Candidatures</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-number">{selectedStudent.accepted_applications_count ?? 0}</span>
+                      <span className="stat-label">Acceptées</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button type="button" className="secondary-btn" onClick={closeStudentModal}>
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <section className="card">
         <h3>Students Filters</h3>
         <form className="stack-form" onSubmit={(e) => e.preventDefault()}>
@@ -125,11 +242,21 @@ const AdminStudentsPage = () => {
                   <td>{row.is_active ? "active" : "inactive"}</td>
                   <td>
                     <div className="inline-actions">
-                      <button type="button" className="secondary-btn small" onClick={() => updateStatus(row)}>
-                        {row.is_active ? "Suspend" : "Activate"}
+                      <button 
+                        type="button" 
+                        className="consult-btn" 
+                        onClick={() => viewStudentDetails(row)}
+                        title="Consulter les détails"
+                      >
+                        👁️ Consulter
                       </button>
-                      <button type="button" className="danger-btn small" onClick={() => deleteUser(row)}>
-                        Delete
+                      <button 
+                        type="button" 
+                        className="suspend-btn" 
+                        onClick={() => updateStatus(row)}
+                        title={row.is_active ? "Suspendre le compte" : "Activer le compte"}
+                      >
+                        {row.is_active ? "⏸️ Suspendre" : "▶️ Activer"}
                       </button>
                     </div>
                   </td>

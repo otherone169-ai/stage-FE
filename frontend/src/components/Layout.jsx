@@ -7,10 +7,19 @@ const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
   const initials = (user?.email || "").charAt(0).toUpperCase();
@@ -55,7 +64,15 @@ const Layout = () => {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="Primary navigation">
+      <button 
+        className="mobile-menu-toggle" 
+        onClick={toggleMobileMenu}
+        aria-label="Toggle mobile menu"
+      >
+        ☰
+      </button>
+      
+      <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} aria-label="Primary navigation">
         <div className="sidebar-header">
           <div className="brand">
             <div className="brand-dot" />
@@ -79,47 +96,25 @@ const Layout = () => {
         <nav className="nav-links" role="navigation">
           <div className="nav-group">
             <div className="nav-group-title">Principal</div>
-            <NavLink to="/app/dashboard">📊 Dashboard</NavLink>
-            <NavLink to="/app/enhanced-dashboard">📈 Stats Avancées</NavLink>
+            <NavLink to="/app/dashboard" onClick={closeMobileMenu}>📊 Dashboard</NavLink>
+            <NavLink to="/app/enhanced-dashboard" onClick={closeMobileMenu}>📈 Stats Avancées</NavLink>
           </div>
 
           <div className="nav-group">
-            <div className="nav-group-title">🔐 Administration</div>
-            {user?.role === "admin" && <NavLink to="/app/admin/rh-companies">👥 RH & Companies</NavLink>}
-            {user?.role === "admin" && <NavLink to="/app/admin/students">🎓 Students</NavLink>}
-            {user?.role === "admin" && <NavLink to="/app/admin/applications">📝 Applications</NavLink>}
-            {user?.role === "admin" && <NavLink to="/app/admin/supervisors">👨‍💼 Supervisors</NavLink>}
-          </div>
-
-          <div className="nav-group">
-            <div className="nav-group-title">👨‍🏫 Superviseur</div>
-            {user?.role === "supervisor" && <NavLink to="/app/supervisor/internships">📋 Mes stages</NavLink>}
-          </div>
-
-          <div className="nav-group">
-            <div className="nav-group-title">🎯 Stagiaire</div>
-            {user?.role === "student" && <NavLink to="/app/student/my-project">🏢 Mon Projet</NavLink>}
-            {user?.role === "student" && <NavLink to="/app/student/acceptance">✨ Mes propositions</NavLink>}
-            {user?.role === "student" && <NavLink to="/app/student/weekly-followup">📅 Suivi hebdomadaire</NavLink>}
-            {user?.role === "student" && <NavLink to="/app/student/profile">⚙️ Mon profil</NavLink>}
-          </div>
-
-          <div className="nav-group">
-            <div className="nav-group-title">🏢 Entreprise</div>
-            {user?.role !== "company" && <NavLink to="/app/internships">📌 Stages</NavLink>}
-            {user?.role === "company" && <NavLink to="/app/company/profile">🏪 Profil</NavLink>}
-            {user?.role === "company" && <NavLink to="/app/company/internships">📋 Stages</NavLink>}
-            {user?.role === "company" && <NavLink to="/app/company/applications">📮 Applications</NavLink>}
-            {user?.role === "company" && <NavLink to="/app/company/supervisors">👨‍💼 Supervisors</NavLink>}
-            {user?.role === "company" && <NavLink to="/app/company/interns">👨‍🎓 Interns</NavLink>}
+            <div className="nav-group-title">{user?.role === "supervisor" ? "🏗️ Projets" : "🎯 Stagiaire"}</div>
+            {user?.role === "student" && <NavLink to="/app/student/my-project" onClick={closeMobileMenu}>🏢 Mon Projet</NavLink>}
+            {user?.role === "supervisor" && <NavLink to="/app/supervisor/projects" onClick={closeMobileMenu}>🏗️ Mes Projets</NavLink>}
+            {user?.role === "supervisor" && (
+              <NavLink className="add-intern-link" to="/app/supervisor/add-intern" onClick={closeMobileMenu} title="Assigner un stagiaire">👥 Assigner</NavLink>
+            )}
           </div>
 
           <div className="nav-group">
             <div className="nav-group-title">✅ Travail</div>
-            <NavLink to="/app/notifications">🔔 Notifications</NavLink>
+            <NavLink to="/app/notifications" onClick={closeMobileMenu}>🔔 Notifications</NavLink>
             {(user?.role === "supervisor" || user?.role === "student") && (
               <div className="nav-link-with-badge">
-                <NavLink to="/app/tasks">📝 Tasks</NavLink>
+                <NavLink to="/app/tasks" onClick={closeMobileMenu}>📝 Tasks</NavLink>
                 {unreadCount > 0 && (
                   <span className="notification-badge" title={`${unreadCount} unread notifications`}>
                     🔴 {unreadCount}
@@ -128,19 +123,44 @@ const Layout = () => {
               </div>
             )}
             {(user?.role === "supervisor" || user?.role === "student") && (
-              <NavLink to="/app/reports">📊 Reports</NavLink>
+              <NavLink to="/app/reports" onClick={closeMobileMenu}>📊 Reports</NavLink>
             )}
           </div>
+
+          {/* Admin Management Links */}
+          {user?.role === "admin" && (
+            <div className="nav-group">
+              <div className="nav-group-title">🔐 Administration</div>
+              <NavLink 
+                to="/app/admin/students" 
+                onClick={closeMobileMenu}
+                className="admin-nav-link"
+              >
+                <span className="nav-icon">👥</span>
+                Gérer les Stagiaires
+              </NavLink>
+              <NavLink 
+                to="/app/admin/supervisors" 
+                onClick={closeMobileMenu}
+                className="admin-nav-link"
+              >
+                <span className="nav-icon">👨‍🏫</span>
+                Gérer les Superviseurs
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">
-          {(user?.role === "supervisor" || user?.role === "student" || user?.role === "company") && (
+          {(user?.role === "supervisor" || user?.role === "student" || user?.role === "company" || user?.role === "admin") && (
             <NavLink 
               className="sidebar-footer-link" 
+              onClick={closeMobileMenu}
               to={
                 user?.role === "supervisor" ? "/app/supervisor/profile" :
                 user?.role === "student" ? "/app/student/profile" :
-                "/app/company/profile"
+                user?.role === "company" ? "/app/company/profile" :
+                "/app/admin/profile"
               }
             >
               ⚙️ Mon profil
@@ -152,7 +172,7 @@ const Layout = () => {
         </div>
       </aside>
 
-      <main className="content">
+      <main className="content" onClick={closeMobileMenu}>
         <header className="topbar">
           <div>
             <h2>Bienvenue, {user?.email}</h2>

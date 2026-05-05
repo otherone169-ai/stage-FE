@@ -1,0 +1,38 @@
+/* Modern CSS Grid approach for sidebar layout */
+.app-shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  /* Sidebar takes its natural width */
+  position: static; /* Remove fixed positioning */
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.content {
+  /* Content automatically fills remaining space */
+  margin: 0; /* Remove manual margins */
+  width: 100%; /* Remove calc() width */
+  overflow-y: auto;
+}
+
+/* For responsive behavior */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr; /* Stack vertically on mobile */
+  }
+  
+  .sidebar {
+    position: fixed; /* Re-add fixed for mobile overlay */
+    left: -100%;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+}

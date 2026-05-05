@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ const DashboardPage = () => {
   }, []);
 
   if (loading) return <LoadingSpinner label="Chargement du tableau de bord..." />;
-  if (error) return <p className="form-error">{error}</p>;
+  if (error) return <div className="form-error">{error}</div>;
 
   const role = user?.role;
   const summary = stats?.summary || {};
@@ -34,105 +36,79 @@ const DashboardPage = () => {
   const applications = stats?.applications || {};
   const reports = stats?.reports || {};
 
+  const renderMetricCard = (label, value, icon = "📊", status = "default") => (
+    <article className={`metric-card status-${status}`}>
+      <div style={{ fontSize: "1.5rem" }}>{icon}</div>
+      <h3>{label}</h3>
+      <p>{value}</p>
+    </article>
+  );
+
   if (role === "company") {
     return (
-      <div className="dashboard-grid">
-        <article className="metric-card">
-          <h3>Offres publiees</h3>
-          <p>{summary.internships ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Offres actives</h3>
-          <p>{summary.activeInternships ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Candidatures a traiter</h3>
-          <p>{applications.pending ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Stagiaires suivis</h3>
-          <p>{summary.interns ?? 0}</p>
-        </article>
+      <div className="page-wrapper">
+        <div style={{ marginBottom: "24px" }}>
+          <h2>Tableau de Bord</h2>
+          <p className="section-subtitle">Suivi de vos offres de stage et stagiaires</p>
+        </div>
+        <div className="dashboard-grid">
+          {renderMetricCard("Offres publiées", summary.internships ?? 0, "📋", "default")}
+          {renderMetricCard("Offres actives", summary.activeInternships ?? 0, "✅", "active")}
+          {renderMetricCard("Candidatures à traiter", applications.pending ?? 0, "📧", applications.pending > 0 ? "pending" : "default")}
+          {renderMetricCard("Stagiaires suivis", summary.interns ?? 0, "👥", "default")}
+        </div>
       </div>
     );
   }
 
   if (role === "supervisor") {
     return (
-      <div className="dashboard-grid">
-        <article className="metric-card">
-          <h3>Mes stagiaires</h3>
-          <p>{summary.interns ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Rapports a valider</h3>
-          <p>{summary.pendingReports ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Taches en cours</h3>
-          <p>{tasks.inProgress ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Taches terminees</h3>
-          <p>{tasks.done ?? 0}</p>
-        </article>
+      <div className="page-wrapper">
+        <div style={{ marginBottom: "24px" }}>
+          <h2>Tableau de Bord</h2>
+          <p className="section-subtitle">Suivi de vos stagiaires et tâches</p>
+        </div>
+        <div className="dashboard-grid">
+          {renderMetricCard("Mes stagiaires", summary.interns ?? 0, "👤", "default")}
+          {renderMetricCard("Rapports à valider", summary.pendingReports ?? 0, "📄", summary.pendingReports > 0 ? "pending" : "default")}
+          {renderMetricCard("Tâches en cours", tasks.inProgress ?? 0, "⚙️", "active")}
+          {renderMetricCard("Tâches terminées", tasks.done ?? 0, "✔️", "default")}
+        </div>
       </div>
     );
   }
 
   if (role === "student") {
     return (
-      <div className="dashboard-grid">
-        <article className="metric-card">
-          <h3>Candidatures</h3>
-          <p>{summary.applications ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Stage actif</h3>
-          <p>{summary.activeInternships ? "Oui" : "Non"}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Taches en cours</h3>
-          <p>{tasks.inProgress ?? 0}</p>
-        </article>
-
-        <article className="metric-card">
-          <h3>Rapports soumis</h3>
-          <p>{reports.submitted ?? 0}</p>
-        </article>
+      <div className="page-wrapper">
+        <div style={{ marginBottom: "24px" }}>
+          <h2>Tableau de Bord</h2>
+          <p className="section-subtitle">Suivi de votre progression</p>
+        </div>
+        <div className="dashboard-grid">
+          {renderMetricCard("Candidatures", summary.applications ?? 0, "📨", "default")}
+          {renderMetricCard("Stage actif", summary.activeInternships ? "Oui" : "Non", summary.activeInternships ? "✅" : "❌", summary.activeInternships ? "active" : "default")}
+          {renderMetricCard("Tâches à faire", tasks.todo ?? 0, "📝", tasks.todo > 0 ? "pending" : "default")}
+          {renderMetricCard("Tâches complétées", tasks.done ?? 0, "✔️", "default")}
+        </div>
       </div>
     );
   }
 
+  // Admin dashboard
   return (
-    <div className="dashboard-grid">
-      <article className="metric-card">
-        <h3>Etudiants</h3>
-        <p>{summary.students ?? 0}</p>
-      </article>
-
-      <article className="metric-card">
-        <h3>Entreprises</h3>
-        <p>{summary.companies ?? 0}</p>
-      </article>
-
-      <article className="metric-card">
-        <h3>Superviseurs</h3>
-        <p>{summary.supervisors ?? 0}</p>
-      </article>
-
-      <article className="metric-card">
-        <h3>Stages actifs</h3>
-        <p>{summary.internships ?? 0}</p>
-      </article>
+    <div className="page-wrapper">
+      <div style={{ marginBottom: "24px" }}>
+        <h2>Tableau de Bord Administrateur</h2>
+        <p className="section-subtitle">Vue d'ensemble du système</p>
+      </div>
+      
+      <div className="dashboard-grid">
+        {renderMetricCard("Utilisateurs totaux", summary.totalUsers ?? 0, "👥", "default")}
+        {renderMetricCard("Offres de stage", summary.totalInternships ?? 0, "📋", "default")}
+        {renderMetricCard("Candidatures", summary.totalApplications ?? 0, "📧", "default")}
+        {renderMetricCard("Rapports", summary.totalReports ?? 0, "📊", "default")}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import pool, { query } from "../config/db.js";
 
 const signToken = (user) =>
@@ -11,7 +12,8 @@ export const register = async (req, res, next) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const { name, email, password, role, department, school, startDate, endDate } = req.body;
+    const { email, password, fullName, companyName, companyDescription, companyLocation, companyWebsite, position } = req.body;
+    const role = "supervisor";
 
     const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
@@ -19,35 +21,30 @@ export const register = async (req, res, next) => {
       return res.status(409).json({ message: "Email already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const userResult = await client.query(
-      "INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role",
-      [name, email, hashedPassword, role]
+      "INSERT INTO users (email, password_hash, role, is_active, is_email_verified) VALUES ($1, $2, $3, true, false) RETURNING id, email, role",
+      [email, passwordHash, role]
     );
-
     const user = userResult.rows[0];
 
-    if (role === "supervisor") {
-      await client.query("INSERT INTO supervisors (user_id, department) VALUES ($1, $2)", [
-        user.id,
-        department || null
-      ]);
-    }
+    // Insert supervisor with company information directly
+    const supervisorResult = await client.query(
+      `INSERT INTO supervisors (user_id, full_name, position, company_name, company_description, company_location, company_website)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id`,
+      [user.id, fullName, position || null, companyName, companyDescription || null, companyLocation || null, companyWebsite || null]
+    );
 
-    if (role === "intern") {
-      await client.query(
-        "INSERT INTO interns (user_id, school, start_date, end_date) VALUES ($1, $2, $3, $4)",
-        [user.id, school || null, startDate || null, endDate || null]
-      );
-    }
+    const verificationToken = await issueEmailVerificationToken(client, user.id);
 
     await client.query("COMMIT");
+    await sendEmailVerificationMail(user.email, verificationToken);
+    await logAudit(user.id, "AUTH_REGISTER", { role: "supervisor" });
 
     return res.status(201).json({
-      message: "User registered successfully",
-      token: signToken(user),
-      user
+      message: "Registration successful. Verification email sent."
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -62,7 +59,17 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const result = await query(
-      "SELECT id, name, email, role, password_hash FROM users WHERE email = $1",
+      `SELECT u.id, u.email, u.password_hash, u.role, u.is_active,
+              CASE 
+                WHEN u.role = 'student' THEN s.full_name
+                WHEN u.role = 'supervisor' THEN sp.full_name
+                WHEN u.role = 'admin' THEN 'Administrator'
+                ELSE u.email
+              END as full_name
+       FROM users u
+       LEFT JOIN students s ON s.user_id = u.id
+       LEFT JOIN supervisors sp ON sp.user_id = u.id
+       WHERE u.email = $1`,
       [email]
     );
 
@@ -71,19 +78,26 @@ export const login = async (req, res, next) => {
     }
 
     const user = result.rows[0];
-    const isValid = await bcrypt.compare(password, user.password_hash);
 
-    if (!isValid) {
+    if (!user.is_active) {
+      return res.status(401).json({ message: "Account is disabled" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const token = signToken(user);
+    await logAudit(user.id, "AUTH_LOGIN", { email });
+
     return res.json({
-      token: signToken(user),
+      token,
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        fullName: user.full_name
       }
     });
   } catch (error) {
@@ -93,14 +107,81 @@ export const login = async (req, res, next) => {
 
 export const me = async (req, res, next) => {
   try {
-    const result = await query("SELECT id, name, email, role FROM users WHERE id = $1", [req.user.id]);
+    const result = await query(
+      `SELECT u.id, u.email, u.role, u.is_active, u.is_email_verified,
+              CASE 
+                WHEN u.role = 'student' THEN s.full_name
+                WHEN u.role = 'supervisor' THEN sp.full_name
+                WHEN u.role = 'admin' THEN 'Administrator'
+                ELSE u.email
+              END as full_name
+       FROM users u
+       LEFT JOIN students s ON s.user_id = u.id
+       LEFT JOIN supervisors sp ON sp.user_id = u.id
+       WHERE u.id = $1`,
+      [req.user.id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.json(result.rows[0]);
+    const user = result.rows[0];
+    return res.json(user);
   } catch (error) {
     return next(error);
   }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const result = await query("SELECT password_hash FROM users WHERE id = $1", [req.user.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isValidPassword = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    await query("UPDATE users SET password_hash = $1 WHERE id = $2", [newPasswordHash, req.user.id]);
+    
+    await logAudit(req.user.id, "PASSWORD_CHANGED", {});
+    
+    return res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Helper functions (these should be imported from utils)
+const issueEmailVerificationToken = async (client, userId) => {
+  const rawToken = Math.random().toString(36).slice(-12);
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  
+  await client.query(
+    `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
+    [userId, tokenHash]
+  );
+  
+  return rawToken;
+};
+
+const sendEmailVerificationMail = async (email, token) => {
+  // This should be implemented using your mail service
+  console.log(`Email verification sent to ${email} with token ${token}`);
+};
+
+const logAudit = async (userId, action, metadata) => {
+  await query(
+    "INSERT INTO audit_logs (user_id, action, metadata) VALUES ($1, $2, $3)",
+    [userId, action, metadata]
+  );
 };

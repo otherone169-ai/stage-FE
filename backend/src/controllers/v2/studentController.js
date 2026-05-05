@@ -205,3 +205,19 @@ export const getMyCvDownloadToken = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const listStudents = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT s.id, s.full_name, s.phone, s.education, s.skills, s.experience, s.cv_url, s.profile_completed,
+              u.email, u.created_at
+       FROM students s
+       JOIN users u ON u.id = s.user_id
+       WHERE u.is_active = true
+       ORDER BY s.full_name`
+    );
+    return res.json(result.rows);
+  } catch (error) {
+    return next(error);
+  }
+};

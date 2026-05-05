@@ -1,47 +1,86 @@
 import { createContext, useEffect, useMemo, useState } from "react";
-import apiClient from "../api/client";
+import apiClient, {
+  AUTH_STORAGE_EVENT,
+  clearStoredSession,
+  getStoredToken,
+  getStoredUser,
+  persistSession
+} from "../api/client";
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  });
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [user, setUser] = useState(() => getStoredUser());
+  const [token, setToken] = useState(() => getStoredToken());
   const [isLoading, setIsLoading] = useState(false);
 
-  const syncCurrentUser = async () => { 
+  const syncCurrentUser = async () => {
     const { data } = await apiClient.get("/auth/me");
-    setUser({
+    const nextUser = {
       id: data.user?.id || data.id,
       email: data.user?.email || data.email,
       role: data.user?.role || data.role
-    });
+    };
+
+    setUser(nextUser);
+    persistSession({ token: getStoredToken(), user: nextUser });
+    return nextUser;
   };
 
-  useEffect(() => {  
-    if (token) {
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-    }
-  }, [token]);
+  useEffect(() => {
+    const syncFromStorage = () => {
+      setToken(getStoredToken());
+      setUser(getStoredUser());
+    };
+
+    window.addEventListener(AUTH_STORAGE_EVENT, syncFromStorage);
+    window.addEventListener("storage", syncFromStorage);
+
+    return () => {
+      window.removeEventListener(AUTH_STORAGE_EVENT, syncFromStorage);
+      window.removeEventListener("storage", syncFromStorage);
+    };
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("user");
+    if (!token) {
+      return;
     }
-  }, [user]);
+
+    let active = true;
+
+    const ensureCurrentUser = async () => {
+      try {
+        const nextUser = await syncCurrentUser();
+        if (!active) {
+          return;
+        }
+
+        setUser(nextUser);
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        clearStoredSession();
+        setToken(null);
+        setUser(null);
+      }
+    };
+
+    ensureCurrentUser();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   const login = async (email, password) => {
     setIsLoading(true);
     try {
       const { data } = await apiClient.post("/auth/login", { email, password });
-      localStorage.setItem("token", data.token);
-      apiClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+
+      persistSession({ token: data.token, user: data.user });
       setToken(data.token);
       setUser(data.user);
       await syncCurrentUser();
@@ -58,8 +97,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await apiClient.post("/auth/register", payload);
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        apiClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+        persistSession({ token: data.token, user: data.user });
         setToken(data.token);
         setUser(data.user);
         await syncCurrentUser();
@@ -79,6 +117,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    clearStoredSession();
     setToken(null);
     setUser(null);
   };

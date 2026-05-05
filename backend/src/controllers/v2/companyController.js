@@ -65,7 +65,7 @@ export const monitorInterns = async (req, res, next) => {
        JOIN students st ON st.id = inr.student_id
        LEFT JOIN tasks t ON t.project_id = p.id
        WHERE c.user_id = $1
-       GROUP BY inr.id, st.full_name, inr.status, p.title
+       GROUP BY inr.id
        ORDER BY st.full_name`,
       [req.user.id]
     );

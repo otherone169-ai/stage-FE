@@ -182,6 +182,18 @@ export const getSupervisorStudents = async (req, res, next) => {
       return res.status(404).json({ error: "Internship not found" });
     }
 
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    // Get total count for pagination metadata
+    const countResult = await query(
+      `SELECT COUNT(*) as total
+       FROM interns i
+       WHERE i.project_id IN (SELECT id FROM projects WHERE internship_id = $1)`,
+      [internshipId]
+    );
+
     const students = await query(
       `SELECT 
         i.id, s.id as student_id, s.full_name, u.email, s.cv_url, s.cv_file_url, s.cv_parsed_data,
@@ -190,11 +202,25 @@ export const getSupervisorStudents = async (req, res, next) => {
        JOIN students s ON i.student_id = s.id
        JOIN users u ON s.user_id = u.id
        WHERE i.project_id IN (SELECT id FROM projects WHERE internship_id = $1)
-       ORDER BY i.created_at DESC`,
-      [internshipId]
+       ORDER BY i.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [internshipId, limit, offset]
     );
 
-    res.json(students.rows);
+    const total = parseInt(countResult.rows[0].total);
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: students.rows,
+      pagination: {
+        current_page: page,
+        total_pages: totalPages,
+        total_items: total,
+        items_per_page: limit,
+        has_next: page < totalPages,
+        has_prev: page > 1
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -252,16 +278,30 @@ export const addStudentToInternship = async (req, res, next) => {
     try {
       await client.query("BEGIN");
 
-      // Create project if not exists
-      let project = await client.query(
-        `SELECT id FROM projects WHERE internship_id = $1 LIMIT 1`,
-        [internshipId]
-      );
+      // Determine project to use: prefer explicit projectId if provided
+      const providedProjectId =
+        typeof req.body.projectId === "string" && req.body.projectId.trim()
+          ? req.body.projectId.trim()
+          : null;
+      let project;
+      if (providedProjectId) {
+        // Verify provided project belongs to this internship and supervisor
+        project = await client.query(
+          `SELECT id FROM projects WHERE id = $1 AND internship_id = $2 AND supervisor_id = $3 LIMIT 1`,
+          [providedProjectId, internshipId, supervisor.rows[0].id]
+        );
 
-      if (!project.rows.length) {
+        if (!project.rows.length) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ error: "Provided projectId is invalid for this internship" });
+        }
+      } else {
+        // Create or reuse a project under the internship
+        // CRITICAL FIX #5: Use ON CONFLICT to prevent race condition
         project = await client.query(
           `INSERT INTO projects (internship_id, supervisor_id, title, description)
            VALUES ($1, $2, $3, $4)
+           ON CONFLICT (internship_id, title) DO UPDATE SET updated_at = NOW()
            RETURNING id`,
           [internshipId, supervisor.rows[0].id, "Default Project", ""]
         );
@@ -353,6 +393,20 @@ export const addStudentToInternship = async (req, res, next) => {
 
       const internDurationWeeks = computeDurationWeeks(startDate, endDate);
 
+      // CRITICAL FIX #1: Check for duplicate intern registration
+      const existingIntern = await client.query(
+        `SELECT i.id
+         FROM interns i
+         JOIN projects p ON p.id = i.project_id
+         WHERE i.student_id = $1 AND p.internship_id = $2
+         LIMIT 1`,
+        [resolvedStudentId, internshipId]
+      );
+      if (existingIntern.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ error: 'Student already registered for this internship' });
+      }
+
       // Add student as intern
       const intern = await client.query(
         `INSERT INTO interns (student_id, project_id, supervisor_id, status, acceptance_status, start_date, end_date)
@@ -373,14 +427,24 @@ export const addStudentToInternship = async (req, res, next) => {
       }
 
       await client.query("COMMIT");
+      
+      // CRITICAL FIX #6: Track email failure and return warning to supervisor
+      let emailSent = true;
       if (inviteToken && inviteEmail) {
         try {
           await sendPasswordSetupMail(inviteEmail, inviteToken);
         } catch (mailError) {
-          // Keep the student creation successful even if SMTP is temporarily unavailable.
+          console.error("Password setup email failed:", mailError.message);
+          emailSent = false;
+          // Log but don't fail the operation
         }
       }
-      res.status(201).json(intern.rows[0]);
+      
+      const response = {
+        ...intern.rows[0],
+        ...(emailSent ? {} : { warning: "Email notification failed - student may not receive password setup link" })
+      };
+      res.status(201).json(response);
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

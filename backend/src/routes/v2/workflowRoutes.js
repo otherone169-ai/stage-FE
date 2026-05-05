@@ -6,6 +6,8 @@ import * as dashboardStatsController from "../../controllers/v2/dashboardStatsCo
 import * as notificationController from "../../controllers/v2/notificationController.js";
 import { authenticate } from "../../middlewares/authMiddleware.js";
 import { uploadCV } from "../../middlewares/uploadMiddleware.js";
+import { validate } from "../../middlewares/validate.js";
+import { addStudentToInternshipSchema } from "../../validations/v2/supervisorValidation.js";
 
 const router = express.Router();
 
@@ -17,6 +19,7 @@ router.post(
 	"/supervisors/internships/:internshipId/students",
 	authenticate,
 	uploadCV.single("cv"),
+	validate(addStudentToInternshipSchema),
 	supervisorInternshipController.addStudentToInternship
 );
 router.post("/supervisors/students/accept", authenticate, supervisorInternshipController.acceptStudent);

@@ -77,8 +77,6 @@ const notifyProjectInterns = async (projectId, notificationType, taskTitle, task
       notificationMessage = `La tâche "${taskTitle}" a été mise à jour dans le projet "${projectTitle}"`;
     }
 
-    const linkUrl = `/app/tasks/${taskId}`;
-
     // Insert notification for each intern
     for (const intern of interns.rows) {
       if (excludeUserId && intern.user_id === excludeUserId) {
@@ -86,9 +84,9 @@ const notifyProjectInterns = async (projectId, notificationType, taskTitle, task
       }
 
       await query(
-        `INSERT INTO notifications (user_id, type, message, link_url, is_read)
-         VALUES ($1, $2, $3, $4, FALSE)`,
-        [intern.user_id, notificationType, notificationMessage, linkUrl]
+        `INSERT INTO notifications (user_id, type, message, is_read)
+         VALUES ($1, $2, $3, FALSE)`,
+        [intern.user_id, notificationType, notificationMessage]
       );
     }
   } catch (error) {
@@ -175,15 +173,13 @@ export const listTasks = async (req, res, next) => {
       `SELECT 
         t.id, t.project_id, t.title, t.description, t.deadline, t.status, t.created_at, t.updated_at,
         p.title as project_title,
-        intp.title as internship_title,
         COUNT(DISTINCT tr.id) as remark_count
       FROM tasks t
       JOIN projects p ON p.id = t.project_id
-      JOIN internships intp ON intp.id = p.internship_id
       LEFT JOIN interns i ON i.project_id = p.id
       LEFT JOIN task_remarks tr ON tr.task_id = t.id
       ${whereClause}
-      GROUP BY t.id, t.project_id, t.title, t.description, t.deadline, t.status, t.created_at, t.updated_at, p.title, intp.title
+      GROUP BY t.id
       ORDER BY t.deadline ASC, t.created_at DESC`,
       values
     );
@@ -205,14 +201,12 @@ export const getTaskDetails = async (req, res, next) => {
       `SELECT 
         t.id, t.project_id, t.title, t.description, t.deadline, t.status, t.created_at, t.updated_at,
         p.id as project_id, p.title as project_title,
-        intp.title as internship_title,
         COUNT(DISTINCT tr.id) as remark_count
       FROM tasks t
       JOIN projects p ON p.id = t.project_id
-      JOIN internships intp ON intp.id = p.internship_id
       LEFT JOIN task_remarks tr ON tr.task_id = t.id
       WHERE t.id = $1
-      GROUP BY t.id, t.project_id, t.title, t.description, t.deadline, t.status, t.created_at, t.updated_at, p.title, intp.title`,
+      GROUP BY t.id`,
       [req.params.id]
     );
 

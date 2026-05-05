@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
+import AuthPageHeader from "../components/AuthPageHeader";
+import FormField from "../components/FormField";
 import { useAuth } from "../hooks/useAuth";
 
 const RegisterPage = () => {
@@ -9,32 +11,101 @@ const RegisterPage = () => {
   const [form, setForm] = useState({
     fullName: "",
     companyName: "",
+    position: "",
     email: "",
-    password: "",
-    role: "student",
-    location: "",
-    website: ""
+    password: ""
   });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [touched, setTouched] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const calculatePasswordStrength = (password) => {
+    if (!password) return { strength: 0, level: 'weak' };
+    
+    let strength = 0;
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      numbers: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    Object.values(checks).forEach(passed => {
+      if (passed) strength++;
+    });
+    
+    let level = 'weak';
+    if (strength >= 4) level = 'strong';
+    else if (strength >= 2) level = 'medium';
+    
+    return { strength, level };
+  };
+
+  const getFieldError = (field, value) => {
+    if (!touched[field]) return "";
+    
+    switch (field) {
+      case "fullName":
+        if (!value) return "Le nom complet est requis";
+        if (value.length < 2) return "Le nom doit contenir au moins 2 caractères";
+        return "";
+      case "companyName":
+        if (!value) return "Le nom de l'entreprise est requis";
+        return "";
+      case "position":
+        if (!value) return "Le poste est requis";
+        return "";
+      case "email":
+        if (!value) return "L'email est requis";
+        if (!validateEmail(value)) return "Format d'email invalide";
+        return "";
+      case "password":
+        if (!value) return "Le mot de passe est requis";
+        if (value.length < 8) return "Le mot de passe doit contenir au moins 8 caractères";
+        return "";
+      default:
+        return "";
+    }
+  };
 
   const handleChange = (event) => {
-    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setNotice("");
+    
+    // Validate all fields
+    const fields = ['fullName', 'companyName', 'position', 'email', 'password'];
+    const errors = fields.map(field => getFieldError(field, form[field]));
+    const hasErrors = errors.some(error => error);
+    
+    if (hasErrors) {
+      setTouched(fields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
+      setError("Veuillez corriger les erreurs dans le formulaire");
+      return;
+    }
 
     const payload = {
       email: form.email,
       password: form.password,
-      role: form.role,
-      fullName: form.role === "student" ? form.fullName : undefined,
-      companyName: form.role === "company" ? form.companyName : undefined,
-      location: form.role === "company" ? form.location : undefined,
-      website: form.role === "company" ? form.website : undefined
+      fullName: form.fullName,
+      companyName: form.companyName,
+      position: form.position
     };
 
     const result = await register(payload);
@@ -52,91 +123,159 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Inscription</h1>
-        <p>Creez un compte selon votre role.</p>
+    <div className="auth-page-shell">
+      <AuthPageHeader />
 
-        <form onSubmit={handleSubmit} className="stack-form">
-          {form.role === "student" && (
-            <>
-              <label htmlFor="fullName">Nom complet</label>
-              <input
+      <div className="auth-layout">
+        <div className="auth-visual auth-image" />
+
+        <div className="auth-form-container">
+          <div className="auth-card">
+            <div className="auth-header">
+              <h1>Inscription Superviseur</h1>
+              <p>Créez votre accès superviseur pour gérer les stages, projets et suivis.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <FormField
                 id="fullName"
+                label="Nom complet"
                 name="fullName"
+                placeholder="Jean Dupont"
                 value={form.fullName}
                 onChange={handleChange}
+                onBlur={() => handleBlur("fullName")}
                 required
+                error={getFieldError("fullName", form.fullName)}
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zM3 21a9 9 0 0118 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               />
-            </>
-          )}
 
-          {form.role === "company" && (
-            <>
-              <label htmlFor="companyName">Nom entreprise</label>
-              <input
+              <FormField
                 id="companyName"
+                label="Entreprise"
                 name="companyName"
+                placeholder="Acme Corporation"
                 value={form.companyName}
                 onChange={handleChange}
+                onBlur={() => handleBlur("companyName")}
                 required
+                error={getFieldError("companyName", form.companyName)}
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               />
-            </>
-          )}
 
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
-
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            minLength={8}
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-
-          <label htmlFor="role">Role</label>
-          <select id="role" name="role" value={form.role} onChange={handleChange}>
-            <option value="student">Stagiaire</option>
-            <option value="company">Entreprise</option>
-          </select>
-
-          {form.role === "company" && (
-            <>
-              <label htmlFor="location">Localisation</label>
-              <input
-                id="location"
-                name="location"
-                value={form.location}
+              <FormField
+                id="position"
+                label="Poste"
+                name="position"
+                placeholder="Responsable de stage"
+                value={form.position}
                 onChange={handleChange}
+                onBlur={() => handleBlur("position")}
+                error={getFieldError("position", form.position)}
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12v6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 8h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               />
-              <label htmlFor="website">Website</label>
-              <input id="website" name="website" value={form.website} onChange={handleChange} />
-            </>
-          )}
 
-          {error && <p className="form-error">{error}</p>}
-          {notice && <p className="form-success">{notice}</p>}
+              <FormField
+                id="email"
+                label="Adresse email"
+                name="email"
+                type="email"
+                placeholder="nom@entreprise.com"
+                value={form.email}
+                onChange={handleChange}
+                onBlur={() => handleBlur("email")}
+                required
+                error={getFieldError("email", form.email)}
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8.5L12 13l9-4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              />
 
-          <button type="submit" disabled={isLoading} className="primary-btn">
-            {isLoading ? "Creation..." : "Creer un compte"}
-          </button>
-        </form>
+              <FormField
+                id="password"
+                label="Mot de passe"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                minLength={8}
+                value={form.password}
+                onChange={handleChange}
+                onBlur={() => handleBlur("password")}
+                required
+                error={getFieldError("password", form.password)}
+                showPasswordStrength={true}
+                passwordStrength={calculatePasswordStrength(form.password)}
+                hint="Minimum 8 caractères. Incluez majuscules, chiffres et symboles pour plus de sécurité."
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {showPassword ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6"/>
+                        <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </button>
+                }
+              />
 
-        {isLoading && <LoadingSpinner label="Creation du compte..." />}
+              {error && <div className="form-error">{error}</div>}
+              {notice && <div className="form-success">{notice}</div>}
 
-        <p className="auth-switch">
-          Deja inscrit ? <Link to="/login">Se connecter</Link>
-        </p>
+              <button type="submit" disabled={isLoading} className="auth-submit-btn">
+                {isLoading ? (
+                  <>
+                    <span className="loading-spinner" style={{ marginRight: '8px' }}></span>
+                    Création en cours...
+                  </>
+                ) : (
+                  "Créer le compte superviseur"
+                )}
+              </button>
 
-        {notice && (
-          <p className="auth-switch">
-            Puis <Link to="/verify-email">verifier votre email</Link> avant de vous connecter.
-          </p>
-        )}
+              <div className="social-divider">
+                <div style={{flex:1,height:1,background:'var(--border)'}} />
+                <span>ou</span>
+                <div style={{flex:1,height:1,background:'var(--border)'}} />
+              </div>
+
+              <div className="social-row">
+                <button type="button" className="social-btn google">
+                  <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" style={{width:18,height:18}} />
+                  Continuer avec Google
+                </button>
+              </div>
+            </form>
+
+            {isLoading && <LoadingSpinner label="Création du compte..." />}
+
+            <div className="auth-footer">
+              <p className="auth-link-group">
+                Déjà inscrit ? <Link to="/login" className="auth-link">Se connecter</Link>
+              </p>
+              {notice && (
+                <p className="auth-link-group">
+                  Puis <Link to="/verify-email" className="auth-link">vérifier votre email</Link> avant de vous connecter.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

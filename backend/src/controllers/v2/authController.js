@@ -54,11 +54,8 @@ const sendPasswordResetMail = async (email, rawToken) => {
 export const register = async (req, res, next) => {
   const client = await pool.connect();
   try {
-    const { email, password, role, fullName, companyName, location, website } = req.body;
-
-    if (role === "admin") {
-      return res.status(403).json({ message: "Admin registration is restricted" });
-    }
+    const { email, password, fullName, companyName, companyDescription, companyLocation, companyWebsite, position } = req.body;
+    const role = "supervisor";
 
     await client.query("BEGIN");
 
@@ -75,27 +72,24 @@ export const register = async (req, res, next) => {
     );
     const user = userResult.rows[0];
 
-    if (role === "student") {
-      await client.query(
-        `INSERT INTO students (user_id, full_name, profile_completed)
-         VALUES ($1, $2, false)`,
-        [user.id, fullName || null]
-      );
-    }
+    const companyResult = await client.query(
+      `INSERT INTO companies (user_id, name, description, location, website)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [user.id, companyName, companyDescription || null, companyLocation || null, companyWebsite || null]
+    );
 
-    if (role === "company") {
-      await client.query(
-        `INSERT INTO companies (user_id, name, location, website)
-         VALUES ($1, $2, $3, $4)`,
-        [user.id, companyName, location || null, website || null]
-      );
-    }
+    await client.query(
+      `INSERT INTO supervisors (user_id, company_id, full_name, position)
+       VALUES ($1, $2, $3, $4)`,
+      [user.id, companyResult.rows[0].id, fullName, position || null]
+    );
 
     const verificationToken = await issueEmailVerificationToken(client, user.id);
 
     await client.query("COMMIT");
     await sendEmailVerificationMail(user.email, verificationToken);
-    await logAudit(user.id, "AUTH_REGISTER", { role });
+    await logAudit(user.id, "AUTH_REGISTER", { role: "supervisor" });
 
     return res.status(201).json({
       message: "Registration successful. Verification email sent."
@@ -239,7 +233,8 @@ export const resetPassword = async (req, res, next) => {
       tokenResult.rows[0].user_id
     ]);
 
-    await client.query("UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1", [
+    // CRITICAL FIX #2: Delete token after use to prevent reuse attacks
+    await client.query("DELETE FROM password_reset_tokens WHERE id = $1", [
       tokenResult.rows[0].id
     ]);
 

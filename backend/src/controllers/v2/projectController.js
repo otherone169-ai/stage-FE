@@ -7,31 +7,19 @@ export const listProjects = async (req, res, next) => {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
-    const where = [];
-    const values = [supervisor.rows[0].id];
-
-    if (req.query.internshipId) {
-      values.push(req.query.internshipId);
-      where.push(`p.internship_id = $${values.length}`);
-    }
-
-    const whereClause = where.length > 0 ? `AND ${where.join(" AND ")}` : "";
-
     const result = await query(
       `SELECT
         p.*,
-        i.title as internship_title,
         COUNT(DISTINCT t.id) as task_count,
         COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END) as completed_task_count,
         COUNT(DISTINCT ir.id) as interns_count
       FROM projects p
-      JOIN internships i ON i.id = p.internship_id
       LEFT JOIN tasks t ON t.project_id = p.id
       LEFT JOIN interns ir ON ir.project_id = p.id
-      WHERE p.supervisor_id = $1 ${whereClause}
-      GROUP BY p.id, p.internship_id, p.supervisor_id, p.title, p.description, p.objectives, p.created_at, i.title
+      WHERE p.supervisor_id = $1
+      GROUP BY p.id
       ORDER BY p.created_at DESC`,
-      values
+      [supervisor.rows[0].id]
     );
 
     return res.json(result.rows);
@@ -42,20 +30,11 @@ export const listProjects = async (req, res, next) => {
 
 export const createProject = async (req, res, next) => {
   try {
-    const { internshipId, title, description, objectives, tasks = [] } = req.body;
+    const { title, description, objectives, location, duration, domain, requirements, tasks = [] } = req.body;
 
     const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
     if (supervisor.rows.length === 0) {
       return res.status(404).json({ message: "Supervisor profile not found" });
-    }
-
-    const internship = await query(
-      "SELECT id FROM internships WHERE id = $1 AND supervisor_id = $2",
-      [internshipId, supervisor.rows[0].id]
-    );
-
-    if (internship.rows.length === 0) {
-      return res.status(404).json({ message: "Internship not found" });
     }
 
     const normalizedTasks = Array.isArray(tasks)
@@ -67,24 +46,23 @@ export const createProject = async (req, res, next) => {
           .filter((task) => task.title.length > 0)
       : [];
 
-    if (normalizedTasks.length === 0) {
-      return res.status(400).json({ message: "At least one task is required" });
-    }
-
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
       const projectResult = await client.query(
-        `INSERT INTO projects (internship_id, supervisor_id, title, description, objectives)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO projects (supervisor_id, title, description, objectives, location, duration, domain, requirements)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
         [
-          internshipId,
           supervisor.rows[0].id,
           title.trim(),
           description?.trim() || null,
-          objectives?.trim() || description?.trim() || null
+          objectives?.trim() || description?.trim() || null,
+          location?.trim() || null,
+          duration?.trim() || null,
+          domain?.trim() || null,
+          requirements?.trim() || null
         ]
       );
 
@@ -135,9 +113,8 @@ export const assignInternToProject = async (req, res, next) => {
 
     // Verify project belongs to supervisor
     const project = await query(
-      `SELECT p.id, p.title, p.description, i.title as internship_title
+      `SELECT p.id, p.title, p.description
        FROM projects p
-       JOIN internships i ON i.id = p.internship_id
        WHERE p.id = $1 AND p.supervisor_id = $2`,
       [projectId, supervisor.rows[0].id]
     );
@@ -163,15 +140,35 @@ export const assignInternToProject = async (req, res, next) => {
     try {
       await client.query("BEGIN");
 
-      // Check if already assigned
-      const existing = await client.query(
+      // Check if already assigned to this project
+      const existingProject = await client.query(
         `SELECT id FROM interns WHERE student_id = $1 AND project_id = $2`,
         [studentId, projectId]
       );
 
-      if (existing.rows.length > 0) {
+      if (existingProject.rows.length > 0) {
         await client.query("ROLLBACK");
         return res.status(409).json({ message: "Student already assigned to this project" });
+      }
+
+      // Check if student is already assigned to any other active project
+      const existingAssignment = await client.query(
+        `SELECT id, p.title as project_title 
+         FROM interns i
+         JOIN projects p ON p.id = i.project_id
+         WHERE i.student_id = $1 AND i.status IN ('active', 'paused')`,
+        [studentId]
+      );
+
+      if (existingAssignment.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ 
+          message: "Student already assigned to another project",
+          details: {
+            project_id: existingAssignment.rows[0].id,
+            project_title: existingAssignment.rows[0].project_title
+          }
+        });
       }
 
       // Create assignment in interns table
@@ -194,13 +191,18 @@ export const assignInternToProject = async (req, res, next) => {
         .map((t, i) => `${i + 1}. ${t.title}${t.description ? ` - ${t.description}` : ""}`)
         .join("\n");
 
-      const notificationMessage = `Vous avez été assigné au projet: "${projectInfo.title}" (${projectInfo.internship_title})\n\nDescription: ${projectInfo.description || "N/A"}\n\nTâches à accomplir:\n${tasksList}`;
+      const notificationMessage = `Vous avez été assigné au projet: "${projectInfo.title}"
+
+Description: ${projectInfo.description || "N/A"}
+
+Tâches à accomplir:
+${tasksList}`;
 
       const notificationResult = await client.query(
-        `INSERT INTO notifications (user_id, type, message, link_url, is_read)
-         VALUES ($1, 'project_assignment', $2, $3, false)
-         RETURNING id, message, link_url`,
-        [student.rows[0].user_id, notificationMessage, `/app/student/my-project`]
+        `INSERT INTO notifications (user_id, type, message, is_read)
+         VALUES ($1, 'project_assignment', $2, false)
+         RETURNING id, message`,
+        [student.rows[0].user_id, notificationMessage]
       );
 
       // Log audit
@@ -248,17 +250,15 @@ export const getMyAssignedProject = async (req, res, next) => {
     const result = await query(
       `SELECT 
         p.id, p.title, p.description, p.objectives,
-        i.title as internship_title,
         COUNT(DISTINCT t.id) as total_tasks,
         COUNT(DISTINCT CASE WHEN t.status = 'todo' THEN t.id END) as todo_tasks,
         COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END) as in_progress_tasks,
         COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END) as done_tasks
       FROM interns ir
       JOIN projects p ON p.id = ir.project_id
-      JOIN internships i ON i.id = p.internship_id
       LEFT JOIN tasks t ON t.project_id = p.id
       WHERE ir.student_id = $1 AND ir.status = 'active'
-      GROUP BY p.id, i.title
+      GROUP BY p.id
       LIMIT 1`,
       [student.rows[0].id]
     );

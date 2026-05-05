@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import multer from "multer";
 
 const uploadsDir = path.resolve(process.cwd(), "uploads");
@@ -10,8 +11,10 @@ if (!fs.existsSync(uploadsDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
+    // CRITICAL FIX #4: Use cryptographically secure random filename
     const ext = path.extname(file.originalname || "").toLowerCase();
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    const randomName = crypto.randomBytes(16).toString('hex');
+    cb(null, `${randomName}${ext}`);
   }
 });
 

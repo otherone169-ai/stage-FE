@@ -5,14 +5,9 @@ import ApplicationsPage from "./pages/ApplicationsPage";
 import AdminApplicationsPage from "./pages/AdminApplicationsPage";
 import AdminRhCompaniesPage from "./pages/AdminRhCompaniesPage";
 import AdminStudentsPage from "./pages/AdminStudentsPage";
-import CompanyInternsPage from "./pages/CompanyInternsPage";
-import CompanyInternshipsPage from "./pages/CompanyInternshipsPage";
-import CompanyApplicationsPage from "./pages/CompanyApplicationsPage";
-import CompanySupervisorsPage from "./pages/CompanySupervisorsPage";
 import CompanyProfilePage from "./pages/CompanyProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import InternshipsPage from "./pages/InternshipsPage";
 import InternsPage from "./pages/InternsPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -25,13 +20,12 @@ import SupervisorProfilePage from "./pages/SupervisorProfilePage";
 import SupervisorsPage from "./pages/SupervisorsPage";
 import TasksPage from "./pages/TasksPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import SupervisorInternshipsPage from "./pages/SupervisorInternshipsPage";
-import SupervisorStudentsPage from "./pages/SupervisorStudentsPage";
-import StudentAcceptancePage from "./pages/StudentAcceptancePage";
-import WeeklyFollowUpPage from "./pages/WeeklyFollowUpPage";
+import SupervisorProjectsPage from "./pages/SupervisorProjectsPage";
 import EnhancedDashboardPage from "./pages/EnhancedDashboardPage";
 import MyProjectPage from "./pages/MyProjectPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import SupervisorAssignInternPage from "./pages/SupervisorAssignInternPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
 
 const App = () => (
   <Routes>
@@ -52,10 +46,6 @@ const App = () => (
     >
       <Route index element={<Navigate to="/app/dashboard" replace />} />
       <Route path="dashboard" element={<DashboardPage />} />
-      <Route
-        path="internships"
-        element={<InternshipsPage />}
-      />
       <Route
         path="admin/overview"
         element={
@@ -85,6 +75,14 @@ const App = () => (
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminApplicationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="admin/profile"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminProfilePage />
           </ProtectedRoute>
         }
       />
@@ -121,42 +119,10 @@ const App = () => (
         }
       />
       <Route
-        path="company/internships"
-        element={
-          <ProtectedRoute allowedRoles={["company"]}>
-            <CompanyInternshipsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="admin/supervisors"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <SupervisorsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="company/interns"
-        element={
-          <ProtectedRoute allowedRoles={["company"]}>
-            <CompanyInternsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="company/applications"
-        element={
-          <ProtectedRoute allowedRoles={["company"]}>
-            <CompanyApplicationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="company/supervisors"
-        element={
-          <ProtectedRoute allowedRoles={["company"]}>
-            <CompanySupervisorsPage />
           </ProtectedRoute>
         }
       />
@@ -185,18 +151,10 @@ const App = () => (
         }
       />
       <Route
-        path="supervisor/internships"
+        path="supervisor/projects"
         element={
           <ProtectedRoute allowedRoles={["supervisor"]}>
-            <SupervisorInternshipsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="supervisor/internships/:internshipId/students"
-        element={
-          <ProtectedRoute allowedRoles={["supervisor"]}>
-            <SupervisorStudentsPage />
+            <SupervisorProjectsPage />
           </ProtectedRoute>
         }
       />
@@ -209,18 +167,19 @@ const App = () => (
         }
       />
       <Route
-        path="student/acceptance"
+        path="student/add-intern"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
-            <StudentAcceptancePage />
+            <Navigate to="/app/student/my-project" replace />
           </ProtectedRoute>
         }
       />
+
       <Route
-        path="student/weekly-followup"
+        path="supervisor/add-intern"
         element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <WeeklyFollowUpPage />
+          <ProtectedRoute allowedRoles={["supervisor"]}>
+            <SupervisorAssignInternPage />
           </ProtectedRoute>
         }
       />

@@ -250,7 +250,10 @@ const EnhancedDashboardPage = () => {
 
     return (
       <div className="page-wrapper">
-        <h2>Tableau de bord administrateur</h2>
+        <div style={{ marginBottom: "24px" }}>
+          <h2>Tableau de bord administrateur</h2>
+          <p className="section-subtitle">Vue d'ensemble du système</p>
+        </div>
 
         {/* Global Stats */}
         <div className="dashboard-grid">

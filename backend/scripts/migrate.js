@@ -1,10 +1,11 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import pool from "../src/config/db.js";
 import { logger } from "../src/utils/logger.js";
 
+// Load environment variables before importing DB pool
 dotenv.config();
+const { default: pool } = await import("../src/config/db.js");
 
 const run = async () => {
   const client = await pool.connect();

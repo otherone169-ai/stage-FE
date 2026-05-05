@@ -20,9 +20,9 @@ export const getSupervisorDashboardStats = async (req, res, next) => {
     const studentStats = await query(
       `SELECT 
         COUNT(DISTINCT i.id)::int as total,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'pending' THEN i.id END)::int as pending,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'accepted' THEN i.id END)::int as accepted,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'confirmed' THEN i.id END)::int as confirmed
+        COUNT(DISTINCT CASE WHEN i.status = 'active' THEN i.id END)::int as active,
+        COUNT(DISTINCT CASE WHEN i.status = 'paused' THEN i.id END)::int as paused,
+        COUNT(DISTINCT CASE WHEN i.status = 'completed' THEN i.id END)::int as completed
        FROM interns i
        WHERE i.supervisor_id = $1`,
       [supervisorId]
@@ -35,7 +35,7 @@ export const getSupervisorDashboardStats = async (req, res, next) => {
        FROM projects p
        LEFT JOIN interns i ON p.id = i.project_id
        WHERE p.supervisor_id = $1
-       GROUP BY p.id, p.title`,
+       GROUP BY p.id`,
       [supervisorId]
     );
 
@@ -44,7 +44,7 @@ export const getSupervisorDashboardStats = async (req, res, next) => {
       `SELECT 
         i.id, i.title, i.start_date, i.end_date, i.duration_weeks,
         COUNT(DISTINCT ins.id)::int as total_students,
-        COUNT(DISTINCT CASE WHEN ins.acceptance_status = 'confirmed' THEN ins.id END)::int as confirmed_students
+        COUNT(DISTINCT CASE WHEN ins.status = 'active' THEN ins.id END)::int as active_students
        FROM internships i
        LEFT JOIN projects p ON i.id = p.internship_id
        LEFT JOIN interns ins ON p.id = ins.project_id
@@ -100,11 +100,13 @@ export const getStudentDashboardStats = async (req, res, next) => {
     // Student's internship stats
     const internshipStats = await query(
       `SELECT 
-        i.id, i.title, i.status, i.start_date, i.end_date, i.acceptance_status,
-        p.title as project_title, su.full_name as supervisor_name
+        i.id, i.status, i.start_date, i.end_date,
+        p.title as project_title, su.full_name as supervisor_name,
+        c.name as company_name
        FROM interns i
        JOIN projects p ON i.project_id = p.id
        JOIN supervisors su ON i.supervisor_id = su.id
+       JOIN companies c ON c.id = su.company_id
        WHERE i.student_id = $1
        ORDER BY i.created_at DESC`,
       [student.rows[0].id]
@@ -165,29 +167,28 @@ export const getAdminDashboardStats = async (req, res, next) => {
     // Global stats
     const globalStats = await query(
       `SELECT 
-        COUNT(DISTINCT u.id)::int as total_users,
-        COUNT(DISTINCT CASE WHEN u.role = 'student' THEN u.id END)::int as total_students,
-        COUNT(DISTINCT CASE WHEN u.role = 'supervisor' THEN u.id END)::int as total_supervisors,
-        COUNT(DISTINCT i.id)::int as total_interns,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'confirmed' THEN i.id END)::int as confirmed_interns,
-        COUNT(DISTINCT p.id)::int as total_projects,
-        COUNT(DISTINCT in2.id)::int as total_internships
-       FROM users u
-       LEFT JOIN interns i ON u.id = u.id
-       LEFT JOIN projects p ON u.id = u.id
-       LEFT JOIN internships in2 ON u.id = u.id`
+        (SELECT COUNT(*)::int FROM users) as total_users,
+        (SELECT COUNT(*)::int FROM users WHERE role = 'student') as total_students,
+        (SELECT COUNT(*)::int FROM users WHERE role = 'supervisor') as total_supervisors,
+        (SELECT COUNT(*)::int FROM interns) as total_interns,
+        (SELECT COUNT(*)::int FROM companies) as total_companies,
+        (SELECT COUNT(*)::int FROM internships) as total_internships,
+        (SELECT COUNT(*)::int FROM applications) as total_applications,
+        (SELECT COUNT(*)::int FROM projects) as total_projects`
     );
 
     // Supervisor stats
     const supervisorStats = await query(
       `SELECT 
         su.id, su.full_name, su.position,
+        c.name as company_name,
         COUNT(DISTINCT i.id)::int as managed_students,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'confirmed' THEN i.id END)::int as confirmed_students,
-        COUNT(DISTINCT CASE WHEN i.acceptance_status = 'pending' THEN i.id END)::int as pending_students
+        COUNT(DISTINCT CASE WHEN i.status = 'active' THEN i.id END)::int as active_students,
+        COUNT(DISTINCT CASE WHEN i.status = 'completed' THEN i.id END)::int as completed_students
        FROM supervisors su
+       JOIN companies c ON c.id = su.company_id
        LEFT JOIN interns i ON su.id = i.supervisor_id
-       GROUP BY su.id, su.full_name, su.position
+       GROUP BY su.id, su.full_name, su.position, c.name
        ORDER BY managed_students DESC`
     );
 
@@ -197,7 +198,7 @@ export const getAdminDashboardStats = async (req, res, next) => {
         p.id, p.title, COUNT(DISTINCT i.id)::int as student_count
        FROM projects p
        LEFT JOIN interns i ON p.id = i.project_id
-       GROUP BY p.id, p.title
+       GROUP BY p.id
        ORDER BY student_count DESC
        LIMIT 10`
     );

@@ -1,4 +1,5 @@
 import { query } from "../../config/db.js";
+import pool from "../../config/db.js";
 import { logAudit } from "../../utils/audit.js";
 
 // ===== ADMIN MANAGEMENT (CRUD for supervisors) =====
@@ -8,9 +9,9 @@ export const listSupervisors = async (req, res, next) => {
     const values = [];
     const where = [];
 
-    if (req.query.companyId) {
-      values.push(req.query.companyId);
-      where.push(`s.company_id = $${values.length}`);
+    if (req.query.companyName) {
+      values.push(`%${req.query.companyName}%`);
+      where.push(`c.name ILIKE $${values.length}`);
     }
 
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
@@ -18,9 +19,8 @@ export const listSupervisors = async (req, res, next) => {
     const result = await query(
       `SELECT 
         s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at,
-        s.company_id,
+        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
         u.email,
-        c.name AS company_name,
         COUNT(DISTINCT i.id) as interns_count,
         COUNT(DISTINCT t.id) as tasks_count
       FROM supervisors s
@@ -29,7 +29,7 @@ export const listSupervisors = async (req, res, next) => {
       LEFT JOIN interns i ON i.supervisor_id = s.id AND i.status = 'active'
       LEFT JOIN tasks t ON t.project_id IN (SELECT id FROM projects WHERE supervisor_id = s.id)
       ${whereClause}
-      GROUP BY s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at, s.company_id, u.email, c.name
+      GROUP BY s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at, c.name, c.description, c.location, c.website, u.email
       ORDER BY s.created_at DESC`,
       values
     );
@@ -45,9 +45,8 @@ export const getSupervisorDetails = async (req, res, next) => {
     const supervisor = await query(
       `SELECT 
         s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at,
-        s.company_id,
-        u.email,
-        c.name AS company_name
+        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
+        u.email
       FROM supervisors s
       JOIN users u ON u.id = s.user_id
       JOIN companies c ON c.id = s.company_id
@@ -72,7 +71,7 @@ export const getSupervisorDetails = async (req, res, next) => {
       JOIN projects p ON p.id = i.project_id
       LEFT JOIN tasks t ON t.project_id = p.id
       WHERE i.supervisor_id = $1
-      GROUP BY i.id, st.full_name, p.title
+      GROUP BY i.id
       ORDER BY i.created_at DESC`,
       [req.params.id]
     );
@@ -142,7 +141,7 @@ export const getMyProfile = async (req, res, next) => {
     const supervisor = await query(
       `SELECT 
         s.id, s.full_name, s.position, s.created_at, s.updated_at,
-        c.id as company_id, c.name as company_name,
+        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
         u.email
       FROM supervisors s
       JOIN users u ON u.id = s.user_id
@@ -168,17 +167,66 @@ export const updateMyProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
-    const result = await query(
-      `UPDATE supervisors
-       SET full_name = COALESCE($1, full_name),
-           position = COALESCE($2, position),
-           updated_at = NOW()
-       WHERE user_id = $3
-       RETURNING *`,
-      [req.body.fullName ?? null, req.body.position ?? null, req.user.id]
-    );
-
-    return res.json(result.rows[0]);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      
+      // Update supervisor profile
+      await client.query(
+        `UPDATE supervisors
+         SET full_name = COALESCE($1, full_name),
+             position = COALESCE($2, position),
+             updated_at = NOW()
+         WHERE user_id = $3`,
+        [
+          req.body.fullName ?? null,
+          req.body.position ?? null,
+          req.user.id
+        ]
+      );
+      
+      // Update company information
+      if (req.body.companyName || req.body.companyDescription || req.body.companyLocation || req.body.companyWebsite) {
+        await client.query(
+          `UPDATE companies
+           SET name = COALESCE($1, name),
+               description = COALESCE($2, description),
+               location = COALESCE($3, location),
+               website = COALESCE($4, website),
+               updated_at = NOW()
+           WHERE id = (SELECT company_id FROM supervisors WHERE user_id = $5)`,
+          [
+            req.body.companyName ?? null,
+            req.body.companyDescription ?? null,
+            req.body.companyLocation ?? null,
+            req.body.companyWebsite ?? null,
+            req.user.id
+          ]
+        );
+      }
+      
+      await client.query("COMMIT");
+      
+      // Return updated profile
+      const updatedProfile = await query(
+        `SELECT 
+          s.id, s.full_name, s.position, s.created_at, s.updated_at,
+          c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
+          u.email
+        FROM supervisors s
+        JOIN users u ON u.id = s.user_id
+        JOIN companies c ON c.id = s.company_id
+        WHERE s.user_id = $1`,
+        [req.user.id]
+      );
+      
+      return res.json(updatedProfile.rows[0]);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      return next(error);
+    } finally {
+      client.release();
+    }
   } catch (error) {
     return next(error);
   }
@@ -207,7 +255,7 @@ export const listMyInterns = async (req, res, next) => {
       LEFT JOIN tasks t ON t.project_id = p.id
       LEFT JOIN feedbacks f ON f.intern_id = i.id
       WHERE i.supervisor_id = $1
-      GROUP BY i.id, st.id, st.full_name, st.skills, p.id, p.title
+      GROUP BY i.id
       ORDER BY i.created_at DESC`,
       [supervisor.rows[0].id]
     );
