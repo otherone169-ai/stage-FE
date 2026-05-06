@@ -42,12 +42,8 @@ const LoginPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
-    
-    // Validate all fields
-    const emailError = getFieldError("email", email);
-    const passwordError = getFieldError("password", password);
-    
-    if (emailError || passwordError) {
+
+    if (!email || !validateEmail(email) || !password || password.length < 6) {
       setTouched({ email: true, password: true });
       setError("Veuillez corriger les erreurs dans le formulaire");
       return;
@@ -70,9 +66,7 @@ const LoginPage = () => {
     <div className="auth-page-shell">
       <AuthPageHeader />
 
-      <div className="auth-layout">
-        <div className="auth-visual auth-image" />
-
+      <div className="auth-layout auth-layout-single">
         <div className="auth-form-container">
           <div className="auth-card">
             <div className="auth-header">
@@ -108,15 +102,7 @@ const LoginPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="auth-icon-btn"
                   >
                     {showPassword ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -150,18 +136,6 @@ const LoginPage = () => {
                 )}
               </button>
 
-              <div className="social-divider">
-                <div style={{flex:1,height:1,background:'var(--border)'}} />
-                <span>ou</span>
-                <div style={{flex:1,height:1,background:'var(--border)'}} />
-              </div>
-
-              <div className="social-row">
-                <button type="button" className="social-btn google">
-                  <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" style={{width:18,height:18}} />
-                  Continuer avec Google
-                </button>
-              </div>
             </form>
 
             {isLoading && <LoadingSpinner label="Vérification des identifiants..." />}

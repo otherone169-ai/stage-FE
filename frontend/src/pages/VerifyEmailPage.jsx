@@ -136,8 +136,8 @@ const VerifyEmailPage = () => {
               </button>
             </form>
 
-            <div style={{ margin: '24px 0', padding: '24px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
+            <div className="auth-alt-section">
+              <p className="auth-alt-title">
                 Ou renvoyer le lien de vérification
               </p>
               
@@ -157,9 +157,8 @@ const VerifyEmailPage = () => {
 
                 <button 
                   type="submit" 
-                  className="auth-submit-btn" 
+                  className="auth-submit-btn auth-submit-btn-secondary"
                   disabled={loading}
-                  style={{ background: 'var(--accent)', opacity: 0.8 }}
                 >
                   {loading ? (
                     <>

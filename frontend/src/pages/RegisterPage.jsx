@@ -88,13 +88,19 @@ const RegisterPage = () => {
     event.preventDefault();
     setError("");
     setNotice("");
-    
-    // Validate all fields
-    const fields = ['fullName', 'companyName', 'position', 'email', 'password'];
-    const errors = fields.map(field => getFieldError(field, form[field]));
-    const hasErrors = errors.some(error => error);
-    
-    if (hasErrors) {
+
+    const fields = ["fullName", "companyName", "position", "email", "password"];
+    const hasInvalidData =
+      !form.fullName ||
+      form.fullName.length < 2 ||
+      !form.companyName ||
+      !form.position ||
+      !form.email ||
+      !validateEmail(form.email) ||
+      !form.password ||
+      form.password.length < 8;
+
+    if (hasInvalidData) {
       setTouched(fields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
       setError("Veuillez corriger les erreurs dans le formulaire");
       return;
@@ -126,9 +132,7 @@ const RegisterPage = () => {
     <div className="auth-page-shell">
       <AuthPageHeader />
 
-      <div className="auth-layout">
-        <div className="auth-visual auth-image" />
-
+      <div className="auth-layout auth-layout-single">
         <div className="auth-form-container">
           <div className="auth-card">
             <div className="auth-header">
@@ -208,15 +212,7 @@ const RegisterPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="auth-icon-btn"
                   >
                     {showPassword ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -248,18 +244,6 @@ const RegisterPage = () => {
                 )}
               </button>
 
-              <div className="social-divider">
-                <div style={{flex:1,height:1,background:'var(--border)'}} />
-                <span>ou</span>
-                <div style={{flex:1,height:1,background:'var(--border)'}} />
-              </div>
-
-              <div className="social-row">
-                <button type="button" className="social-btn google">
-                  <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" style={{width:18,height:18}} />
-                  Continuer avec Google
-                </button>
-              </div>
             </form>
 
             {isLoading && <LoadingSpinner label="Création du compte..." />}

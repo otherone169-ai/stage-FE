@@ -1,248 +1,419 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import client from "../api/client";
 import { useAuth } from "../hooks/useAuth";
-
-const MAX_CV_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_CV_EXTENSIONS = new Set(["pdf", "doc", "docx"]);
-
-const buildInitial = () => ({
-  fullName: "",
-  email: "",
-  startDate: "",
-  endDate: "",
-  cv: null
-});
-
-const getFileExtension = (filename = "") => {
-  const parts = filename.split(".");
-  return parts.length > 1 ? parts.at(-1).toLowerCase() : "";
-};
+import apiClient from "../api/client";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const SupervisorAddInternPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [internships, setInternships] = useState([]);
-  const [internshipId, setInternshipId] = useState("");
-  const [form, setForm] = useState(buildInitial());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [warning, setWarning] = useState("");
-  const [lastCreatedSignature, setLastCreatedSignature] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [internships, setInternships] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedInternship, setSelectedInternship] = useState("");
+  const [cvFile, setCvFile] = useState(null);
+
+  const [formData, setFormData] = useState({
+    email: "",
+    fullName: "",
+    phone: "",
+    education: "",
+    skills: "",
+    experience: "",
+    startDate: "",
+    endDate: "",
+    projectId: ""
+  });
 
   useEffect(() => {
-    if (user?.role !== "supervisor") {
-      navigate("/login");
-      return;
-    }
-
-    loadInternships();
-  }, [user, navigate]);
-
-  const loadInternships = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const res = await client.get("/workflow/supervisors/internships");
-      const list = Array.isArray(res.data) ? res.data : [];
-      setInternships(list);
-
-      if (list.length > 0) {
-        setInternshipId(list[0].id);
-      } else {
-        setError("Aucun Project Stage disponible");
+    const loadInternships = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get("/workflow/supervisors/internships");
+        setInternships(response.data || []);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load internships");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "Impossible de charger les Project Stages");
-    } finally {
-      setLoading(false);
+    };
+
+    if (user?.role === "supervisor") {
+      loadInternships();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedInternship) {
+      const loadProjects = async () => {
+        try {
+          const response = await apiClient.get(`/api/projects?internship_id=${selectedInternship}`);
+          setProjects(response.data || []);
+        } catch (err) {
+          console.error("Failed to load projects:", err);
+        }
+      };
+      loadProjects();
+    } else {
+      setProjects([]);
+      setFormData(prev => ({ ...prev, projectId: "" }));
+    }
+  }, [selectedInternship]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Veuillez télécharger un fichier PDF ou Word (.doc, .docx)");
+        return;
+      }
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("La taille du fichier ne doit pas dépasser 5MB");
+        return;
+      }
+      setCvFile(file);
+      setError("");
     }
   };
 
-  const onChange = (event) => {
-    const { name, value } = event.target;
-    setError("");
-    setWarning("");
-    setForm((current) => ({ ...current, [name]: value }));
-
-    if (name === "email") {
-      setLastCreatedSignature("");
-    }
-  };
-
-  const onFile = (event) => {
-    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
-    setError("");
-    setWarning("");
-
-    if (!file) {
-      setForm((current) => ({ ...current, cv: null }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedInternship) {
+      setError("Veuillez sélectionner un stage");
       return;
     }
 
-    const extension = getFileExtension(file.name);
-    if (!ALLOWED_CV_EXTENSIONS.has(extension)) {
-      setError("Le CV doit être un fichier PDF, DOC ou DOCX.");
-      event.target.value = "";
+    if (!formData.email || !formData.fullName) {
+      setError("L'email et le nom complet sont requis");
       return;
     }
 
-    if (file.size > MAX_CV_SIZE_BYTES) {
-      setError("Le CV dépasse 5 Mo. Choisissez un fichier plus léger.");
-      event.target.value = "";
+    if (!formData.startDate || !formData.endDate) {
+      setError("Les dates de début et de fin du stage sont obligatoires");
       return;
     }
 
-    setForm((current) => ({ ...current, cv: file }));
-  };
-
-  const submit = async (event) => {
-    event.preventDefault();
-
-    const normalizedEmail = form.email.trim().toLowerCase();
-    const creationSignature = `${internshipId}:${normalizedEmail}`;
-
-    if (!internshipId) {
-      setError("Aucun Project Stage disponible");
+    if (new Date(formData.endDate) <= new Date(formData.startDate)) {
+      setError("La date de fin doit être postérieure à la date de début");
       return;
     }
 
-    if (!normalizedEmail) {
-      setError("Email requis");
-      return;
-    }
-
-    if (form.startDate && form.endDate && form.endDate < form.startDate) {
-      setError("La date de fin doit être postérieure à la date de début.");
-      return;
-    }
-
-    if (creationSignature === lastCreatedSignature) {
-      setError("Ce stagiaire vient déjà d'être créé pour ce Project Stage.");
+    if (!cvFile) {
+      setError("Le CV du stagiaire est obligatoire");
       return;
     }
 
     try {
       setSubmitting(true);
-      setUploadProgress(0);
       setError("");
       setSuccess("");
-      setWarning("");
 
-      const payload = new FormData();
-      payload.append("email", normalizedEmail);
-      payload.append("fullName", form.fullName.trim());
-      if (form.startDate) payload.append("startDate", form.startDate);
-      if (form.endDate) payload.append("endDate", form.endDate);
-      if (form.cv) payload.append("cv", form.cv);
+      const formDataToSend = new FormData();
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('education', formData.education);
+      formDataToSend.append('skills', formData.skills);
+      formDataToSend.append('experience', formData.experience);
+      formDataToSend.append('startDate', formData.startDate);
+      formDataToSend.append('endDate', formData.endDate);
+      
+      if (formData.projectId) {
+        formDataToSend.append('projectId', formData.projectId);
+      }
+      
+      if (cvFile) {
+        formDataToSend.append('cv', cvFile);
+      }
 
-      const { data } = await client.post(`/workflow/supervisors/internships/${internshipId}/students`, payload, {
-        onUploadProgress: (progressEvent) => {
-          if (!progressEvent.total) {
-            return;
-          }
+      const response = await apiClient.post(
+        `/workflow/supervisors/internships/${selectedInternship}/students`,
+        formDataToSend,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-          setUploadProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100));
-        },
-        headers: { "Content-Type": "multipart/form-data" }
+      setSuccess(`Stagiaire "${formData.fullName}" ajouté avec succès!`);
+      
+      // Reset form
+      setFormData({
+        email: "",
+        fullName: "",
+        phone: "",
+        education: "",
+        skills: "",
+        experience: "",
+        startDate: "",
+        endDate: "",
+        projectId: ""
       });
+      setCvFile(null);
+      setSelectedInternship("");
+      
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        navigate('/app/supervisor/my-projects');
+      }, 2000);
 
-      setSuccess("Stagiaire ajouté avec succès.");
-      setWarning(data?.warning || "");
-      setLastCreatedSignature(creationSignature);
-      setForm(buildInitial());
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || "Erreur lors de l'ajout du stagiaire");
+      setError(err.response?.data?.error || err.response?.data?.message || "Failed to add intern");
     } finally {
       setSubmitting(false);
-      setUploadProgress(0);
     }
   };
 
-  const selectedInternship = internships.find((item) => item.id === internshipId);
-  const isSubmitDisabled = loading || submitting || !internshipId;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div className="page-wrapper">
-      <div className="card">
-        <h2>Add Intern</h2>
-        <p className="section-subtitle">
-          Ajoutez un stagiaire à un Project Stage existant avec contrôle des dates et du fichier CV.
-        </p>
+    <div className="add-intern-page">
+      <div className="page-header">
+        <h1>➕ Ajouter un stagiaire</h1>
+        <p>Ajoutez un nouveau stagiaire à votre équipe</p>
+      </div>
 
-        {error && <div className="form-error">{error}</div>}
-        {success && <div className="form-success">{success}</div>}
-        {warning && <div className="form-error">{warning}</div>}
+      <div className="add-intern-container">
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
 
-        {loading ? (
-          <p>Chargement...</p>
-        ) : (
-          <form onSubmit={submit} className="supervisor-add-form" style={{ marginTop: 16 }}>
-            <div className="field-grid">
-              <label className="field-card">
-                <span>Project Stage</span>
-                <select value={internshipId} onChange={(event) => setInternshipId(event.target.value)} disabled={submitting}>
-                  {internships.map((internship) => (
-                    <option key={internship.id} value={internship.id}>
-                      {internship.title}
+        {success && (
+          <div className="alert alert-success">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="add-intern-form">
+          {/* Stage Selection */}
+          <div className="form-section">
+            <h3>📋 Sélection du stage</h3>
+            <div className="form-group">
+              <label htmlFor="internship">Stage *</label>
+              <select
+                id="internship"
+                value={selectedInternship}
+                onChange={(e) => setSelectedInternship(e.target.value)}
+                required
+                className="form-select"
+              >
+                <option value="">Sélectionnez un stage</option>
+                {internships.map(internship => (
+                  <option key={internship.id} value={internship.id}>
+                    {internship.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Project Selection */}
+          {projects.length > 0 && (
+            <div className="form-section">
+              <h3>🏗️ Sélection du projet</h3>
+              <div className="form-group">
+                <label htmlFor="projectId">Projet (optionnel)</label>
+                <select
+                  id="projectId"
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleInputChange}
+                  className="form-select"
+                >
+                  <option value="">Créer un nouveau projet automatiquement</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
                     </option>
                   ))}
                 </select>
-              </label>
-
-              <label className="field-card">
-                <span>Nom complet</span>
-                <input name="fullName" value={form.fullName} onChange={onChange} placeholder="Prénom Nom" required />
-              </label>
-
-              <label className="field-card">
-                <span>Email</span>
-                <input name="email" type="email" value={form.email} onChange={onChange} required />
-              </label>
-
-              <label className="field-card">
-                <span>Date de début</span>
-                <input name="startDate" type="date" value={form.startDate} onChange={onChange} required />
-              </label>
-
-              <label className="field-card">
-                <span>Date de fin</span>
-                <input name="endDate" type="date" value={form.endDate} onChange={onChange} required />
-              </label>
-
-              <label className="field-card field-card-upload">
-                <span>CV</span>
-                <input type="file" accept=".pdf,.doc,.docx" onChange={onFile} required />
-                <small>PDF, DOC ou DOCX. Taille max 5MB.</small>
-              </label>
-            </div>
-
-            {selectedInternship && (
-              <div className="parsed-data-box" style={{ marginTop: 12 }}>
-                <strong>{selectedInternship.title}</strong>
-                <p>{selectedInternship.description || "Aucune description disponible."}</p>
               </div>
-            )}
-
-            {submitting && uploadProgress > 0 && (
-              <p className="helper-text" style={{ marginTop: 12 }}>
-                Téléversement du CV: {uploadProgress}%
-              </p>
-            )}
-
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button type="submit" className="primary-btn" disabled={isSubmitDisabled}>
-                {submitting ? "Ajout..." : "Add Intern"}
-              </button>
-              <button type="button" className="secondary-btn" onClick={() => navigate(-1)}>
-                Annuler
-              </button>
             </div>
-          </form>
-        )}
+          )}
+
+          {/* Student Information */}
+          <div className="form-section">
+            <h3>👤 Informations du stagiaire</h3>
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="email">Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="stagiaire@exemple.com"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="fullName">Nom complet *</label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Jean Dupont"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phone">Téléphone</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="+216XXXXXXXXX"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="education">Formation</label>
+                <input
+                  type="text"
+                  id="education"
+                  name="education"
+                  value={formData.education}
+                  onChange={handleInputChange}
+                  placeholder="Master en informatique"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label htmlFor="skills">Compétences</label>
+                <input
+                  type="text"
+                  id="skills"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleInputChange}
+                  placeholder="React, Node.js, PostgreSQL"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label htmlFor="experience">Expérience</label>
+                <textarea
+                  id="experience"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleInputChange}
+                  placeholder="Description de l'expérience professionnelle..."
+                  rows="3"
+                  className="form-textarea"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div className="form-section">
+            <h3>📅 Durée du stage</h3>
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="startDate">Date de début *</label>
+                <input
+                  type="date"
+                  id="startDate"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleInputChange}
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="endDate">Date de fin *</label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleInputChange}
+                  required
+                  className="form-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* CV Upload */}
+          <div className="form-section">
+            <h3>📄 CV du stagiaire</h3>
+            <div className="form-group">
+              <label htmlFor="cv">CV * (PDF ou Word, max 5MB)</label>
+              <input
+                type="file"
+                id="cv"
+                name="cv"
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx"
+                required
+                className="form-file"
+              />
+              {cvFile && (
+                <div className="file-info">
+                  <span>📎 {cvFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCvFile(null)}
+                    className="btn-remove-file"
+                  >
+                    ✖
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={() => navigate('/app/supervisor/my-projects')}
+              className="btn-secondary"
+              disabled={submitting}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? 'Ajout en cours...' : '➕ Ajouter le stagiaire'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

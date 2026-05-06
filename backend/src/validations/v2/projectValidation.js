@@ -1,10 +1,14 @@
 import Joi from "joi";
 
 export const createProjectSchema = Joi.object({
-  internshipId: Joi.string().uuid().required(),
+  internshipId: Joi.string().uuid().optional(),
   title: Joi.string().trim().max(180).required(),
   description: Joi.string().trim().allow("").optional(),
   objectives: Joi.string().trim().allow("").optional(),
+  location: Joi.string().trim().allow("").optional(),
+  duration: Joi.string().trim().allow("").optional(),
+  domain: Joi.string().trim().allow("").optional(),
+  requirements: Joi.string().trim().allow("").optional(),
   tasks: Joi.array()
     .items(
       Joi.object({

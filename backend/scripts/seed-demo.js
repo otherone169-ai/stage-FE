@@ -17,6 +17,7 @@ const DEMO_USERS = [
   { key: "admin", email: "admin.demo@platform.local", role: "admin", password: PASSWORDS.admin },
   { key: "company1", email: "company.alpha@platform.local", role: "company", password: PASSWORDS.company },
   { key: "company2", email: "company.beta@platform.local", role: "company", password: PASSWORDS.company },
+  { key: "supervisor", email: "supervisor.demo@platform.local", role: "supervisor", password: PASSWORDS.supervisor },
   { key: "supervisor1", email: "supervisor.alpha1@platform.local", role: "supervisor", password: PASSWORDS.supervisor },
   { key: "supervisor2", email: "supervisor.alpha2@platform.local", role: "supervisor", password: PASSWORDS.supervisor },
   { key: "supervisor3", email: "supervisor.beta1@platform.local", role: "supervisor", password: PASSWORDS.supervisor },
@@ -24,7 +25,12 @@ const DEMO_USERS = [
   { key: "student2", email: "student.two@platform.local", role: "student", password: PASSWORDS.student },
   { key: "student3", email: "student.three@platform.local", role: "student", password: PASSWORDS.student },
   { key: "student4", email: "student.four@platform.local", role: "student", password: PASSWORDS.student },
-  { key: "student5", email: "student.incomplete@platform.local", role: "student", password: PASSWORDS.student }
+  { key: "student5", email: "student.five@platform.local", role: "student", password: PASSWORDS.student },
+  { key: "student6", email: "student.six@platform.local", role: "student", password: PASSWORDS.student },
+  { key: "student7", email: "student.seven@platform.local", role: "student", password: PASSWORDS.student },
+  { key: "student8", email: "student.eight@platform.local", role: "student", password: PASSWORDS.student },
+  { key: "student9", email: "student.nine@platform.local", role: "student", password: PASSWORDS.student },
+  { key: "student10", email: "student.ten@platform.local", role: "student", password: PASSWORDS.student }
 ];
 
 const upsertUser = async (client, { email, role, password }) => {
@@ -90,6 +96,13 @@ const insertDemoData = async (client, ids) => {
     [ids.supervisor2, companies.alpha, "Youssef Benali", "Data Lead"]
   );
 
+  const supervisorDemo = await client.query(
+    `INSERT INTO supervisors (user_id, company_id, full_name, position)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id`,
+    [ids.supervisor, companies.alpha, "Demo Supervisor", "Project Manager"]
+  );
+
   const supervisor3 = await client.query(
     `INSERT INTO supervisors (user_id, company_id, full_name, position)
      VALUES ($1, $2, $3, $4)
@@ -98,6 +111,7 @@ const insertDemoData = async (client, ids) => {
   );
 
   const supervisors = {
+    demo: supervisorDemo.rows[0].id,
     alphaEng: supervisor1.rows[0].id,
     alphaData: supervisor2.rows[0].id,
     betaQa: supervisor3.rows[0].id
@@ -169,16 +183,97 @@ const insertDemoData = async (client, ids) => {
 
   const student5 = await client.query(
     `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NULL, false)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
      RETURNING id`,
     [
       ids.student5,
-      "Noura Incomplete",
-      null,
-      "Licence en cours",
-      "html,css",
-      null,
-      JSON.stringify({ location: "Casablanca", domain: "Web", duration: "2 months", skills: ["html"] })
+      "Omar El Kettani",
+      "0611000005",
+      "Master en Cybersécurité",
+      "python,security,networking,firewall",
+      "Audit de sécurité réseau",
+      JSON.stringify({ location: "Casablanca", domain: "Security", duration: "6 months", skills: ["python", "security"] }),
+      "/uploads/demo-omar-cv.pdf"
+    ]
+  );
+
+  const student6 = await client.query(
+    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+     RETURNING id`,
+    [
+      ids.student6,
+      "Fatima Zahra",
+      "0611000006",
+      "Licence Marketing Digital",
+      "seo,analytics,facebook-ads,google-ads",
+      "Campagne marketing pour e-commerce",
+      JSON.stringify({ location: "Rabat", domain: "Marketing", duration: "4 months", skills: ["seo", "analytics"] }),
+      "/uploads/demo-fatima-cv.pdf"
+    ]
+  );
+
+  const student7 = await client.query(
+    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+     RETURNING id`,
+    [
+      ids.student7,
+      "Yassine Amrani",
+      "0611000007",
+      "Master UX/UI Design",
+      "figma,sketch,adobe-xd,prototyping,css",
+      "Design application mobile banking",
+      JSON.stringify({ location: "Marrakech", domain: "Design", duration: "5 months", skills: ["figma", "ux"] }),
+      "/uploads/demo-yassine-cv.pdf"
+    ]
+  );
+
+  const student8 = await client.query(
+    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+     RETURNING id`,
+    [
+      ids.student8,
+      "Khadija Mansouri",
+      "0611000008",
+      "Ingénieur en Télécommunications",
+      "5g,networking,voip,cisco,protocols",
+      "Optimisation réseau 5G",
+      JSON.stringify({ location: "Casablanca", domain: "Network", duration: "6 months", skills: ["5g", "networking"] }),
+      "/uploads/demo-khadija-cv.pdf"
+    ]
+  );
+
+  const student9 = await client.query(
+    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+     RETURNING id`,
+    [
+      ids.student9,
+      "Adam Benjelloun",
+      "0611000009",
+      "Master Intelligence Artificielle",
+      "tensorflow,pytorch,nlp,computer-vision,python",
+      "Modèle de reconnaissance d'images",
+      JSON.stringify({ location: "Rabat", domain: "AI", duration: "6 months", skills: ["tensorflow", "ai"] }),
+      "/uploads/demo-adam-cv.pdf"
+    ]
+  );
+
+  const student10 = await client.query(
+    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+     RETURNING id`,
+    [
+      ids.student10,
+      "Mariam El Idrissi",
+      "0611000010",
+      "Master Business Intelligence",
+      "tableau,powerbi,sql,data-warehousing,etl",
+      "Création dashboard KPIs",
+      JSON.stringify({ location: "Casablanca", domain: "BI", duration: "5 months", skills: ["tableau", "bi"] }),
+      "/uploads/demo-mariam-cv.pdf"
     ]
   );
 
@@ -187,7 +282,12 @@ const insertDemoData = async (client, ids) => {
     two: student2.rows[0].id,
     three: student3.rows[0].id,
     four: student4.rows[0].id,
-    incomplete: student5.rows[0].id
+    five: student5.rows[0].id,
+    six: student6.rows[0].id,
+    seven: student7.rows[0].id,
+    eight: student8.rows[0].id,
+    nine: student9.rows[0].id,
+    ten: student10.rows[0].id
   };
 
   const internship1 = await client.query(
@@ -347,9 +447,42 @@ const insertDemoData = async (client, ids) => {
     [
       internships.webClosed,
       supervisors.alphaEng,
-      "SaaS Dashboard Evolution",
-      "Iteration produit sur dashboard et API metier",
-      "Livrer 3 fonctionnalites majeures"
+      "E-commerce Platform",
+      "Développer les fonctionnalités panier et paiement pour une plateforme e-commerce",
+      "Implémenter un système de panier avec gestion des stocks et intégration paiement Stripe"
+    ]
+  );
+
+  // Projects for Demo Supervisor
+  const projectDemo1 = await client.query(
+    `INSERT INTO projects (supervisor_id, title, description, objectives, location, duration, domain, requirements)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id`,
+    [
+      supervisors.demo,
+      "Application de Gestion de Stage",
+      "Développer une application web complète pour la gestion des stages",
+      "Créer une plateforme avec authentification, dashboard, et système de notifications",
+      "Casablanca",
+      "6 mois",
+      "Web Development",
+      "React, Node.js, PostgreSQL, Git"
+    ]
+  );
+
+  const projectDemo2 = await client.query(
+    `INSERT INTO projects (supervisor_id, title, description, objectives, location, duration, domain, requirements)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id`,
+    [
+      supervisors.demo,
+      "Mobile Banking App",
+      "Contribuer au développement d'une application mobile bancaire",
+      "Développer les fonctionnalités de transfert d'argent et consultation de solde",
+      "Remote",
+      "4 mois",
+      "Mobile Development",
+      "React Native, TypeScript, REST APIs"
     ]
   );
 
@@ -378,6 +511,21 @@ const insertDemoData = async (client, ids) => {
      VALUES ($1, $2, $3, 'completed', CURRENT_DATE - INTERVAL '200 days', CURRENT_DATE - INTERVAL '20 days')
      RETURNING id`,
     [students.four, project2.rows[0].id, supervisors.alphaData]
+  );
+
+  // Assign some students to Demo Supervisor projects (leave some pending for testing)
+  const internDemo1 = await client.query(
+    `INSERT INTO interns (student_id, project_id, supervisor_id, status, start_date)
+     VALUES ($1, $2, $3, 'active', CURRENT_DATE - INTERVAL '30 days')
+     RETURNING id`,
+    [students.five, projectDemo1.rows[0].id, supervisors.demo]
+  );
+
+  const internDemo2 = await client.query(
+    `INSERT INTO interns (student_id, project_id, supervisor_id, status, start_date)
+     VALUES ($1, $2, $3, 'active', CURRENT_DATE - INTERVAL '15 days')
+     RETURNING id`,
+    [students.six, projectDemo2.rows[0].id, supervisors.demo]
   );
 
   const task1 = await client.query(
@@ -413,6 +561,35 @@ const insertDemoData = async (client, ids) => {
      VALUES ($1, $2, $3, CURRENT_DATE - INTERVAL '10 days', 'done')
      RETURNING id`,
     [project2.rows[0].id, "Close migration report", "Finalize migration and documentation"]
+  );
+
+  // Tasks for Demo Supervisor Projects
+  const taskDemo1 = await client.query(
+    `INSERT INTO tasks (project_id, title, description, deadline, status)
+     VALUES ($1, $2, $3, CURRENT_DATE + INTERVAL '14 days', 'todo')
+     RETURNING id`,
+    [projectDemo1.rows[0].id, "Configuration Authentification", "Mettre en place JWT et middleware d'auth"]
+  );
+
+  const taskDemo2 = await client.query(
+    `INSERT INTO tasks (project_id, title, description, deadline, status)
+     VALUES ($1, $2, $3, CURRENT_DATE + INTERVAL '21 days', 'todo')
+     RETURNING id`,
+    [projectDemo1.rows[0].id, "Dashboard Supervisor", "Créer interface admin pour gestion des stages"]
+  );
+
+  const taskDemo3 = await client.query(
+    `INSERT INTO tasks (project_id, title, description, deadline, status)
+     VALUES ($1, $2, $3, CURRENT_DATE + INTERVAL '7 days', 'in_progress')
+     RETURNING id`,
+    [projectDemo2.rows[0].id, "Setup React Native", "Configuration environnement et structure de base"]
+  );
+
+  const taskDemo4 = await client.query(
+    `INSERT INTO tasks (project_id, title, description, deadline, status)
+     VALUES ($1, $2, $3, CURRENT_DATE + INTERVAL '14 days', 'todo')
+     RETURNING id`,
+    [projectDemo2.rows[0].id, "API Banking Integration", "Connecter backend banking APIs"]
   );
 
   await client.query(

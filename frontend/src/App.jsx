@@ -24,7 +24,8 @@ import SupervisorProjectsPage from "./pages/SupervisorProjectsPage";
 import EnhancedDashboardPage from "./pages/EnhancedDashboardPage";
 import MyProjectPage from "./pages/MyProjectPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import SupervisorAssignInternPage from "./pages/SupervisorAssignInternPage";
+import SupervisorMyProjectsPage from "./pages/SupervisorMyProjectsPage";
+import SupervisorAddInternPage from "./pages/SupervisorAddInternPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
 
 const App = () => (
@@ -151,6 +152,22 @@ const App = () => (
         }
       />
       <Route
+        path="supervisor/my-projects"
+        element={
+          <ProtectedRoute allowedRoles={["supervisor"]}>
+            <SupervisorMyProjectsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="supervisor/add-intern"
+        element={
+          <ProtectedRoute allowedRoles={["supervisor"]}>
+            <SupervisorAddInternPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="supervisor/projects"
         element={
           <ProtectedRoute allowedRoles={["supervisor"]}>
@@ -175,15 +192,7 @@ const App = () => (
         }
       />
 
-      <Route
-        path="supervisor/add-intern"
-        element={
-          <ProtectedRoute allowedRoles={["supervisor"]}>
-            <SupervisorAssignInternPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
+            <Route
         path="notifications"
         element={
           <ProtectedRoute>

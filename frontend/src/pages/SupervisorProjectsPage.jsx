@@ -301,9 +301,6 @@ const SupervisorProjectsPage = () => {
               <div className="project-header">
                 <h3>{project.title}</h3>
                 <div className="project-actions">
-                  <button className="btn btn-secondary btn-sm">
-                    👥 Assigner des stagiaires
-                  </button>
                   <button 
                     className="btn btn-danger btn-sm"
                     onClick={() => deleteProject(project.id)}

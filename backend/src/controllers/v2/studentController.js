@@ -210,9 +210,12 @@ export const listStudents = async (req, res, next) => {
   try {
     const result = await query(
       `SELECT s.id, s.full_name, s.phone, s.education, s.skills, s.experience, s.cv_url, s.profile_completed,
-              u.email, u.created_at
+              u.email, u.created_at,
+              i.id as assigned_project_id, i.status as assignment_status, p.title as assigned_project_title
        FROM students s
        JOIN users u ON u.id = s.user_id
+       LEFT JOIN interns i ON i.student_id = s.id AND i.status IN ('active', 'paused')
+       LEFT JOIN projects p ON p.id = i.project_id
        WHERE u.is_active = true
        ORDER BY s.full_name`
     );

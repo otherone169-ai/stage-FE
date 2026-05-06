@@ -41,6 +41,108 @@ const Layout = () => {
     }
   }, [theme]);
 
+  // Apply sidebar enhancement styles directly
+  useEffect(() => {
+    const enhanceSidebar = () => {
+      try {
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarUser = document.querySelector('.sidebar-user');
+        const avatar = document.querySelector('.sidebar-user .avatar');
+        const userMeta = document.querySelector('.user-meta');
+        const email = document.querySelector('.user-email');
+        const role = document.querySelector('.role-badge');
+
+        // Apply glassmorphism to main sidebar
+        if (sidebar) {
+          sidebar.style.background = 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)';
+          sidebar.style.boxShadow = '4px 0 10px rgba(0,0,0,0.1)';
+        }
+
+        // Enhanced user profile container with glassmorphism
+        if (sidebarUser) {
+          sidebarUser.style.background = 'rgba(255, 255, 255, 0.03)';
+          sidebarUser.style.margin = '10px 12px 20px 12px';
+          sidebarUser.style.borderRadius = '12px';
+          sidebarUser.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+          sidebarUser.style.transition = 'all 0.3s ease';
+          sidebarUser.style.cursor = 'pointer';
+          sidebarUser.style.backdropFilter = 'blur(10px)';
+          sidebarUser.style.position = 'relative';
+          sidebarUser.style.overflow = 'hidden';
+        }
+
+        // Enhanced avatar with depth and glow effects
+        if (avatar) {
+          avatar.style.width = '36px';
+          avatar.style.height = '36px';
+          avatar.style.backgroundColor = '#4ade80';
+          avatar.style.color = '#064e3b';
+          avatar.style.display = 'flex';
+          avatar.style.alignItems = 'center';
+          avatar.style.justifyContent = 'center';
+          avatar.style.borderRadius = '8px';
+          avatar.style.fontWeight = 'bold';
+          avatar.style.flexShrink = '0';
+          avatar.style.boxShadow = '0 0 15px rgba(74, 222, 128, 0.2)';
+          avatar.style.border = '2px solid rgba(74, 222, 128, 0.1)';
+          avatar.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+          avatar.style.position = 'relative';
+          avatar.style.zIndex = '2';
+          avatar.style.transition = 'all 0.3s ease';
+        }
+
+        // Enhanced user meta layout
+        if (userMeta) {
+          userMeta.style.display = 'flex';
+          userMeta.style.flexDirection = 'column';
+          userMeta.style.gap = '2px';
+          userMeta.style.overflow = 'hidden';
+          userMeta.style.position = 'relative';
+          userMeta.style.zIndex = '1';
+        }
+
+        // Enhanced email styling
+        if (email) {
+          email.style.fontSize = '13px';
+          email.style.color = '#f8fafc';
+          email.style.whiteSpace = 'nowrap';
+          email.style.overflow = 'hidden';
+          email.style.textOverflow = 'ellipsis';
+          email.style.fontWeight = '500';
+          email.style.opacity = '0.9';
+          email.style.transition = 'all 0.2s ease';
+        }
+
+        // Enhanced role badge with glassmorphism
+        if (role) {
+          role.style.fontSize = '11px';
+          role.style.textTransform = 'uppercase';
+          role.style.letterSpacing = '0.05em';
+          role.style.color = '#4ade80';
+          role.style.fontWeight = '700';
+          role.style.background = 'rgba(74, 222, 128, 0.1)';
+          role.style.padding = '2px 8px';
+          role.style.borderRadius = '20px';
+          role.style.display = 'inline-flex';
+          role.style.width = 'fit-content';
+          role.style.backdropFilter = 'blur(5px)';
+          role.style.border = '1px solid rgba(74, 222, 128, 0.2)';
+          role.style.position = 'relative';
+          role.style.transition = 'all 0.3s ease';
+        }
+
+        console.log('✅ Sidebar user profile enhanced with glassmorphism and depth effects');
+      } catch (error) {
+        console.error('❌ Error enhancing sidebar user profile:', error);
+      }
+    };
+
+    // Apply enhancements after component mounts
+    const timer = setTimeout(enhanceSidebar, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     // Fetch unread notification count
     const fetchUnreadCount = async () => {
@@ -103,9 +205,17 @@ const Layout = () => {
           <div className="nav-group">
             <div className="nav-group-title">{user?.role === "supervisor" ? "🏗️ Projets" : "🎯 Stagiaire"}</div>
             {user?.role === "student" && <NavLink to="/app/student/my-project" onClick={closeMobileMenu}>🏢 Mon Projet</NavLink>}
-            {user?.role === "supervisor" && <NavLink to="/app/supervisor/projects" onClick={closeMobileMenu}>🏗️ Mes Projets</NavLink>}
+            {user?.role === "supervisor" && <NavLink to="/app/supervisor/my-projects" onClick={closeMobileMenu}>🏗️ Mes Projets</NavLink>}
             {user?.role === "supervisor" && (
-              <NavLink className="add-intern-link" to="/app/supervisor/add-intern" onClick={closeMobileMenu} title="Assigner un stagiaire">👥 Assigner</NavLink>
+              <button 
+                className="add-intern-btn" 
+                onClick={() => {
+                  closeMobileMenu();
+                  navigate('/app/supervisor/add-intern');
+                }}
+              >
+                ➕ Ajouter un stagiaire
+              </button>
             )}
           </div>
 

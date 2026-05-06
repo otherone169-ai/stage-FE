@@ -72,17 +72,11 @@ export const register = async (req, res, next) => {
     );
     const user = userResult.rows[0];
 
-    const companyResult = await client.query(
-      `INSERT INTO companies (user_id, name, description, location, website)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id`,
-      [user.id, companyName, companyDescription || null, companyLocation || null, companyWebsite || null]
-    );
-
+    // Insert directly into supervisors with company fields (no companies table)
     await client.query(
-      `INSERT INTO supervisors (user_id, company_id, full_name, position)
-       VALUES ($1, $2, $3, $4)`,
-      [user.id, companyResult.rows[0].id, fullName, position || null]
+      `INSERT INTO supervisors (user_id, company_name, company_description, company_location, company_website, full_name, position)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [user.id, companyName, companyDescription || null, companyLocation || null, companyWebsite || null, fullName, position || null]
     );
 
     const verificationToken = await issueEmailVerificationToken(client, user.id);
@@ -159,12 +153,11 @@ export const me = async (req, res, next) => {
     if (user.role === "student") {
       const p = await query("SELECT * FROM students WHERE user_id = $1", [user.id]);
       profile = p.rows[0] || null;
-    } else if (user.role === "company") {
-      const p = await query("SELECT * FROM companies WHERE user_id = $1", [user.id]);
-      profile = p.rows[0] || null;
     } else if (user.role === "supervisor") {
       const p = await query("SELECT * FROM supervisors WHERE user_id = $1", [user.id]);
       profile = p.rows[0] || null;
+    } else if (user.role === "admin") {
+      profile = { role: "admin" };
     }
 
     return res.json({ user, profile });

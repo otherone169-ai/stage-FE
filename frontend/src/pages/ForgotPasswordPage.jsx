@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import apiClient from "../api/client";
 import AuthPageHeader from "../components/AuthPageHeader";
-import AuthIllustration from "../components/AuthIllustration";
 import FormField from "../components/FormField";
 
 const ForgotPasswordPage = () => {
@@ -63,11 +62,7 @@ const ForgotPasswordPage = () => {
     <div className="auth-page-shell">
       <AuthPageHeader />
 
-      <div className="auth-layout">
-        <div className="auth-visual">
-          <AuthIllustration />
-        </div>
-
+      <div className="auth-layout auth-layout-single">
         <div className="auth-form-container">
           <div className="auth-card">
             <div className="auth-header">
