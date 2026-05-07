@@ -427,8 +427,83 @@ académique et professionnel.
 Les interfaces principales de StageFlow sont structurées autour de l'authentification
 sécurisée, des tableaux de bord adaptés à chaque rôle, de la gestion des stages et des
 comptes étudiants, du suivi des tâches avec historique des statuts, et du cycle de
-validation des rapports. Les illustrations présentées dans les chapitres précédents
-documentent les points clés de la modélisation métier, des parcours utilisateurs et de
-l'architecture technique.
+\chapter{Interfaces utilisateur et captures d'écran}
+
+Ce chapitre présente les captures et illustrations les plus représentatives du
+fonctionnement réel de l'application StageFlow disponibles dans le dépôt. Chaque
+élément est accompagné d'un titre académique, d'une brève description fonctionnelle
+et d'une explication de son rôle dans le workflow global. (Remarque : si vous
+préférez des captures d'écran réelles de l'interface utilisateur — authentification,
+tableau de bord, gestion des stagiaires, création de stage, gestion des tâches, espace
+étudiant, rapports — fournissez les images ou autorisez l'accès à l'application pour
+que je puisse réaliser des captures.)
+
+\section{7.1 Création et activation du compte étudiant (séquence)}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.jpg}
+  \caption{Diagramme de séquence : création du compte étudiant et activation}
+  \label{fig:seq-compte}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Ce diagramme représente la séquence d'actions depuis la création manuelle du compte
+par le superviseur jusqu'à l'envoi du courriel d'activation et la première connexion
+de l'étudiant. Il illustre les échanges backend/frontend et le rôle du service d'e-mail.
+
+\paragraph{Rôle dans le workflow}
+Illustre le point d'entrée de l'étudiant dans la plateforme : création de compte par
+le superviseur après acceptation physique, activation du compte et accès à l'espace
+personnel.
+
+\section{7.2 Suivi de l'avancement et des tâches (diagramme d'activités)}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/diagramactivitesuravancementetsuivi.jpg}
+  \caption{Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
+  \label{fig:activite-suivi}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Diagramme décrivant le flux d'activités lié à la création, l'exécution, la revue et la
+validation des tâches. Il met en évidence les statuts de tâche, les actions de
+remise/révision et la boucle de feedback entre étudiant et superviseur.
+
+\paragraph{Rôle dans le workflow}
+Présente la logique opérationnelle du suivi quotidien : assignation des tâches,
+mise à jour des statuts, remontée des blocages et itérations de correction.
+
+\section{7.3 Modèle de données (diagramme de classes UML)}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
+  \caption{Diagramme de classes UML : entités principales et relations}
+  \label{fig:uml-classes}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Diagramme de classes présentant les principales entités persistées (utilisateurs,
+étudiants, superviseurs, stages, tâches, rapports) et leurs relations. Sert de
+référence pour la conception de la base de données PostgreSQL.
+
+\paragraph{Rôle dans le workflow}
+Fournit la vue structurelle essentielle pour comprendre la persistance des objets
+métiers et les contraintes d'intégrité relatives aux opérations (création de compte,
+affectation de tâches, historisation des actions).
+
+\section{7.4 Diagramme des cas d'utilisation}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
+  \caption{Diagramme de cas d'utilisation : interactions fonctionnelles entre les trois rôles}
+  \label{fig:usecase}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Vue synthétique des cas d'utilisation supportés par StageFlow : gestion des stages,
+gestion des comptes étudiants, assignation et suivi des tâches, revue et validation des
+rapports. Ce diagramme met l'accent sur les services fournis par la plateforme sans
+intégrer les processus de recrutement externes.
+
+\paragraph{Rôle dans le workflow}
+Offre une vue globale des responsabilités par rôle et des scénarios fonctionnels
+clés, utile pour les revues fonctionnelles et la définition des tests de validation.
+
 
 \end{document}
