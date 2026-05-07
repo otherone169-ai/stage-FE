@@ -274,7 +274,7 @@ fonctions externes de recrutement ou de publication d'offres.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
+  \includegraphics[width=0.9\textwidth]{screen/UseCaseDiagram.jpg}
   \caption{Diagramme des cas d'utilisation : interactions entre Administrateur,
   Superviseur et Étudiant}
   \label{fig:usecase}
@@ -584,270 +584,208 @@ Fournit une vision d'ensemble utile pour les jurys et la documentation académiq
 
 \chapter{Outils et technologies utilisés}
 
-Ce chapitre présente les principaux outils, frameworks et technologies employés dans
-le développement de StageFlow. Pour chaque technologie, nous décrivons son rôle dans
-le projet, ses avantages dans l'architecture retenue et son intégration dans le workflow
-de développement. Chaque section inclut une zone réservée pour une illustration ou
-capture d'écran représentative.
+Ce chapitre présente les principaux outils et technologies employés dans le
+développement de StageFlow. Chaque section est centrée sur une description technique
+de l'outil, accompagnée d'une illustration représentative issue du dossier \texttt{screen/}.
 
 \section{8.1 Git et GitHub}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : Git/GitHub (logo ou interface)}}
-  \caption{Git et GitHub — contrôle de version distribué (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/git.png}
+  \caption{Git et GitHub — contrôle de version distribué}
   \label{fig:git}
 \end{figure}
 
 \paragraph{Description technique}
 
-Git est un système de contrôle de version distribué qui permet de suivre les modifications
-du code source au fil du temps. GitHub est une plateforme collaborative en ligne basée sur
-Git, offrant un dépôt centralisé, des outils de collaboration et de l'intégration continue.
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-Git soutient le processus de développement itératif : chaque modification de code est
-enregistrée avec un message explicite, permettant de tracer l'historique complet du projet.
-GitHub facilite la collaboration entre développeurs, offre un mécanisme de revue de code
-via les pull requests, et constitue une archive permanente et distribuée du codebase.
-La possibilité de créer des branches isolées permet de développer des fonctionnalités
-en parallèle sans affecter la branche principale (\texttt{master}), assurant une stabilité
-et une sérénité du déploiement.
-
-\paragraph{Intégration dans le workflow}
-
-Lors du développement, chaque ensemble cohérent de modifications est committée avec
-un message clair (ex. : \texttt{fix: authentification JWT}). Les commits sont poussés
-régulièrement vers le dépôt distant (GitHub), constituant une sauvegarde et un point
-d'ancrage pour la collaboration. GitHub Actions peut être configurée pour déclencher
-des tests automatiques ou des déploiements à chaque push, renforçant l'assurance qualité.
+Git est un système de gestion de versions distribué permettant de suivre l'historique
+complet du code source, de gérer des branches et de fusionner des modifications de manière
+fiable. GitHub est une plateforme d'hébergement de dépôts Git qui facilite la collaboration,
+la revue de code et la conservation centralisée des versions du projet.
 
 \section{8.2 Node.js}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : Node.js (logo ou terminal)}}
-  \caption{Node.js — runtime JavaScript côté serveur (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/nodeJs.png}
+  \caption{Node.js — runtime JavaScript côté serveur}
   \label{fig:nodejs}
 \end{figure}
 
 \paragraph{Description technique}
 
-Node.js est un runtime JavaScript asynchrone et orienté événements qui permet d'exécuter
-du JavaScript côté serveur, en dehors du navigateur. Construit sur le moteur V8 de Chrome,
-Node.js offre une performance élevée et une gestion efficace des I/O asynchrones.
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-Le choix de Node.js pour le backend permet une cohérence du langage (JavaScript/TypeScript
-sur le frontend et backend), réduisant la friction cognitive et facilitant le partage
-de code utilitaire. L'architecture orientée événements de Node.js est particulièrement
-adaptée aux applications web modernes avec des milliers de connexions concurrentes.
-La gestion native des Promises et de async/await rend le code asynchrone lisible et
-maintenable. L'écosystème npm offre des millions de paquets réutilisables, accélérant
-le développement.
-
-\paragraph{Intégration dans le workflow}
-
-Le serveur backend de StageFlow est lancé via la commande \texttt{npm run dev}, qui
-démarre un serveur Node.js à l'écoute sur le port 3000. Durant le développement,
-les modifications du code sont détectées automatiquement (via nodemon), ce qui redémarre
-le serveur sans interruption utilisateur. La gestion des modules via npm (définie dans
-\texttt{package.json}) centralise toutes les dépendances.
+Node.js est un environnement d'exécution JavaScript côté serveur basé sur le moteur V8.
+Il repose sur un modèle événementiel non bloquant, adapté aux applications web nécessitant
+de nombreuses opérations I/O asynchrones.
 
 \section{8.3 Express.js}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : Express.js (logo ou code)}}
-  \caption{Express.js — framework web minimaliste (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/expressJS.png}
+  \caption{Express.js — framework web minimaliste}
   \label{fig:express}
 \end{figure}
 
 \paragraph{Description technique}
 
-Express.js est un framework web léger et flexible pour Node.js, conçu pour construire
-des applications web et des API REST. Il fournit un système de routage, un middleware
-réutilisable et des outils essentiels pour la gestion des requêtes HTTP.
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-Express est le cœur de l'architecture backend de StageFlow. Il offre un système de
-routage expressif et flexible permettant de définir les endpoints API (ex. :
-\texttt{POST /api/auth/login}) avec des handlers clairs. Le système middleware permet
-de chaîner des transformations (authentification, validation, logging) de manière
-déclarative et réutilisable. Express est très mature, bénéficie d'une large communauté,
-et s'intègre bien avec les outils d'écosystème Node.js.
-
-\paragraph{Intégration dans le workflow}
-
-Les routes de StageFlow sont organisées par domaine (auth, students, supervisors,
-internships, tasks, reports) dans \texttt{backend/src/routes/}. Chaque route s'appuie
-sur des contrôleurs pour la logique métier et des middlewares pour la validation et
-l'authentification. Cette structuration soutient la modularité et la testabilité du code.
+Express.js est un framework web léger pour Node.js qui fournit un système de routage,
+des middlewares réutilisables et une structure simple pour construire des API REST.
+Il simplifie le traitement des requêtes HTTP et l'organisation des points d'accès backend.
 
 \section{8.4 PostgreSQL}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : PostgreSQL (logo ou dashboard)}}
-  \caption{PostgreSQL — système de gestion de base de données relationnelle (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/postgresql.png}
+  \caption{PostgreSQL — système de gestion de base de données relationnelle}
   \label{fig:postgresql}
 \end{figure}
 
 \paragraph{Description technique}
 
-PostgreSQL est un système de gestion de base de données relationnelle (SGBDR) open-source,
-réputé pour sa robustesse, sa conformité aux standards SQL et ses capacités avancées
-(transactions ACID, triggers, jsonb, extensions, etc.).
+PostgreSQL est un système de gestion de base de données relationnelle open-source,
+connu pour sa robustesse, sa conformité au standard SQL et ses capacités transactionnelles.
+Il assure une persistance cohérente des données et un bon niveau d'intégrité référentielle.
 
-\paragraph{Rôle et avantages dans StageFlow}
-
-PostgreSQL assure la persistance fiable et cohérente des données métier de StageFlow.
-Son modèle relationnel permet de modéliser précisément les entités (utilisateurs,
-étudiants, superviseurs, stages, tâches, rapports) et leurs relations. Les contraintes
-d'intégrité referentielle (clés étrangères) garantissent la cohérence des données.
-Les transactions ACID assurent que les opérations critiques (approbation de rapport,
-assignation de tâche) sont atomiques et cohérentes. Les index ciblés optimisent les
-requêtes fréquentes.
-
-\paragraph{Intégration dans le workflow}
-
-Le code backend se connecte à PostgreSQL via le driver \texttt{pg} (node-postgres),
-configuré dans \texttt{backend/src/config/db.js}. Les migrations SQL dans
-\texttt{backend/migrations/} gèrent l'évolution du schéma de façon versionnée.
-Des scripts de seed (\texttt{backend/scripts/seed*.js}) populant la base avec des données
-de démonstration facilitent les tests et l'onboarding.
-
-\section{8.5 React et Vite}
+\section{8.5 Docker}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : React/Vite (logo ou interface)}}
-  \caption{React et Vite — framework frontend et bundler (image fournie ultérieurement)}
-  \label{fig:react-vite}
-\end{figure}
-
-\paragraph{Description technique}
-
-React est une bibliothèque JavaScript pour construire des interfaces utilisateur réactives
-et composables. Vite est un bundler de module ES moderne offrant un développement ultra-rapide
-avec remplacement de module à chaud (HMR).
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-React permet de découper l'interface utilisateur en composants réutilisables et testables
-(FormField, StatusBadge, InfoCard, Layout, etc.), favorisant la maintenabilité et la
-cohérence du design. La programmation déclarative de React rend le code plus lisible
-et facile à déboguer. Vite offre des temps de compilation extrêmement rapides et un
-rechargement instantané du code lors du développement, améliorant l'expérience développeur.
-
-\paragraph{Intégration dans le workflow}
-
-L'application frontend de StageFlow est développée en React, avec des pages par domaine
-(LoginPage, DashboardPage, TasksPage, ReportsPage, etc.). Vite configure le bundling
-et le serveur de développement via \texttt{vite.config.js}. Lors du développement,
-\texttt{npm run dev} démarre un serveur Vite à l'écoute sur le port 5173, avec HMR
-activée. Pour la production, \texttt{npm run build} génère des assets statiques optimisés.
-
-\section{8.6 Docker}
-
-\begin{figure}[ht]
-  \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : Docker (logo ou image de conteneur)}}
-  \caption{Docker — conteneurisation et orchestration (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/docker.png}
+  \caption{Docker — conteneurisation et portabilité}
   \label{fig:docker}
 \end{figure}
 
 \paragraph{Description technique}
 
-Docker est une plateforme de conteneurisation qui empaquète une application et ses
-dépendances (runtime, bibliothèques, configurations) dans une unité exécutable isolée
-appelée conteneur.
+Docker est une plateforme de conteneurisation qui encapsule une application et ses
+dépendances dans des conteneurs isolés. Elle permet d'obtenir des environnements
+reproductibles entre le développement, les tests et le déploiement.
 
-\paragraph{Rôle et avantages dans StageFlow}
-
-Docker assure la reproductibilité de l'environnement entre développement, test et
-production. Chaque service (backend, frontend, base de données) est défini dans un
-Dockerfile et can be built en une image réutilisable. Docker Compose orchestre
-plusieurs conteneurs, facilitant le déploiement local de toute la pile (backend + frontend
-+ PostgreSQL) avec une simple commande : \texttt{docker compose up -d --build}.
-
-\paragraph{Intégration dans le workflow}
-
-Le fichier \texttt{docker-compose.yml} à la racine du projet définit les trois services :
-\textit{backend} (Node.js/Express), \textit{frontend} (nginx + assets React), et
-\textit{db} (PostgreSQL). Lors du déploiement en production, les images Docker sont
-construites une fois et déployées sur des infrastructures cloud (AWS ECS, Azure Container
-Instances, etc.), garantissant une cohérence stricte.
-
-\section{8.7 JWT (JSON Web Token)}
+\section{8.6 JWT (JSON Web Token)}
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : JWT (structure ou diagramme)}}
-  \caption{JWT — authentification par jeton stateless (image fournie ultérieurement)}
+  \includegraphics[width=0.32\textwidth]{screen/JWT.png}
+  \caption{JWT — authentification par jeton stateless}
   \label{fig:jwt}
 \end{figure}
 
 \paragraph{Description technique}
 
-JWT est un standard (RFC 7519) pour créer des jetons autonomes contenant des assertions
-(claims) signées cryptographiquement. Un JWT se compose de trois parties : header (type
-et algorithme), payload (données/claims), et signature.
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-JWT soutient l'authentification stateless de StageFlow : une fois qu'un utilisateur
-se connecte avec succès (identifiant + mot de passe), le serveur génère un JWT contenant
-l'ID utilisateur, le rôle, et d'autres métadonnées pertinentes. Ce jeton est stocké côté
-client (localStorage ou cookie) et envoyé avec chaque requête API. Le serveur vérifie la
-signature du jeton pour confirmer son authenticité sans consulter la base de données.
-Cette approche évite le stockage d'état sur le serveur (sessions), permettant une
-scalabilité horizontale sans synchronisation d'état.
-
-\paragraph{Intégration dans le workflow}
-
-Le middleware d'authentification de StageFlow (défini dans \texttt{backend/middlewares/authMiddleware.js})
-vérifie le JWT avant chaque accès à une ressource protégée. Si le jeton est valide, la
-requête continue avec l'identité de l'utilisateur attachée au contexte; sinon, une réponse
-401 Unauthorized est renvoyée. Des jetons de courte durée (ex. 15 minutes) associés à des
-jetons de renouvellement (refresh tokens) de longue durée offrent un équilibre entre sécurité
-et expérience utilisateur.
-
-\section{8.8 Joi}
-
-\begin{figure}[ht]
-  \centering
-  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : Joi (schema ou exemple)}}
-  \caption{Joi — validation de schémas et données (image fournie ultérieurement)}
-  \label{fig:joi}
-\end{figure}
-
-\paragraph{Description technique}
-
-Joi est une bibliothèque JavaScript pour la validation de données et la gestion de schémas,
-offrant une API déclarative et expressive pour définir et valider la structure des objets.
-
-\paragraph{Rôle et avantages dans StageFlow}
-
-Joi assure que toutes les données entrantes (requêtes HTTP) respectent les règles métier
-et les contraintes de type avant d'être traitées par la logique applicative. Plutôt que
-de parseer et valider manuellement chaque champ, Joi permet de définir des schémas
-déclaratifs (ex. : l'email doit être une chaîne valide, le mot de passe au moins 8
-caractères). Si la validation échoue, une réponse d'erreur détaillée est renvoyée,
-prévenant les traitement d'entrées invalides et améliorant la sécurité.
-
-\paragraph{Intégration dans le workflow}
-
-Chaque route API de StageFlow est protégée par une validation Joi. Par exemple, la
-route POST /api/auth/login utilise un schéma Joi pour vérifier que l'email et le mot
-de passe sont présents et valides. Les schémas Joi sont centralisés dans
-\texttt{backend/src/validations/} (authValidation.js, internValidation.js, etc.) et
-appliqués via le middleware \texttt{validate} définissable au niveau des routes. Cette
-approche décentralise la logique de validation de la logique métier, favorisant la clarté.
+JWT est un standard de jeton signé qui permet de transporter des informations d'identité
+et d'autorisation de manière compacte et vérifiable. Il est couramment utilisé pour
+l'authentification stateless dans les applications web modernes.
 
 \clearpage
+
+\chapter*{Conclusion générale et perspectives}
+
+Le projet StageFlow constitue une contribution concrète à la digitalisation du suivi et de
+l'encadrement des stagiaires au sein des structures académiques et professionnelles. À travers
+une approche structurée et orientée workflow métier, ce projet a permis de concevoir et de
+développer une plateforme web multi-rôles dédiée à la gestion des stages, au suivi des tâches,
+à l'encadrement des stagiaires ainsi qu'à la gestion des rapports de fin de stage.
+
+L'objectif principal de cette plateforme était de centraliser les interactions entre les
+différents acteurs du processus de stage tout en améliorant la traçabilité, l'organisation et
+la supervision des activités réalisées durant le cycle de stage. Contrairement aux plateformes
+publiques de recrutement, StageFlow adopte une logique interne de gestion et de suivi, où le
+superviseur joue un rôle central dans l'intégration, l'encadrement et l'évaluation du stagiaire.
+
+L'une des principales forces du projet réside dans la séparation claire des responsabilités
+entre les trois rôles principaux : administrateur, superviseur et étudiant. Cette organisation
+permet de garantir une meilleure cohérence fonctionnelle, une gestion plus sécurisée des accès
+ainsi qu'un contrôle précis des opérations métier. Le superviseur peut créer les stages, gérer
+les comptes étudiants, attribuer des tâches et assurer le suivi de progression, tandis que
+l'étudiant dispose d'un espace dédié lui permettant de consulter ses missions, mettre à jour son
+avancement et soumettre ses rapports.
+
+Sur le plan technique, la plateforme repose sur une architecture full-stack moderne utilisant
+React/Vite pour le frontend, Node.js/Express pour le backend et PostgreSQL pour la gestion des
+données. L'intégration de JWT pour l'authentification, du modèle RBAC pour la gestion des
+permissions ainsi que de Joi pour la validation des données a permis de renforcer la sécurité,
+la fiabilité et la maintenabilité de l'application. L'architecture MVC adoptée facilite également
+l'évolutivité du projet et la séparation des responsabilités techniques.
+
+Le projet a également permis de mettre en pratique plusieurs concepts avancés liés au
+développement web moderne, notamment la conception d'API REST, la gestion sécurisée des
+utilisateurs, la structuration des workflows métier, la gestion documentaire et l'organisation
+des composants frontend. Cette expérience a représenté une opportunité importante pour approfondir
+les compétences en ingénierie logicielle, en conception d'architecture applicative et en
+développement full-stack.
+
+Malgré les fonctionnalités déjà implémentées, plusieurs perspectives d'amélioration peuvent être
+envisagées afin d'enrichir davantage la plateforme et d'augmenter son niveau de robustesse et de
+professionnalisation.
+
+\section*{Perspectives}
+
+\begin{itemize}
+  \item Renforcer la couverture des tests automatisés (tests unitaires, tests d'intégration et
+  tests end-to-end) afin d'améliorer la qualité logicielle et la stabilité du système.
+
+  \item Améliorer le système de notifications et de communication en temps réel entre superviseurs
+  et stagiaires via WebSocket ou services temps réel avancés.
+
+  \item Ajouter une gestion documentaire plus avancée avec historique des versions, audit des
+  modifications et amélioration de la traçabilité des rapports.
+
+  \item Optimiser davantage la sécurité applicative à travers un système de logs centralisés, de
+  monitoring et de gestion avancée des incidents.
+
+  \item Déployer la plateforme dans un environnement cloud scalable afin d'améliorer les
+  performances, la disponibilité et la maintenance de l'application.
+
+  \item Intégrer des fonctionnalités complémentaires telles que la génération automatique de rapports
+  PDF, la gestion des évaluations détaillées ou encore le suivi statistique de progression des stages.
+
+  \item Étendre l'architecture pour supporter ultérieurement plusieurs établissements, départements ou
+  structures d'encadrement dans un environnement multi-organisation.
+\end{itemize}
+
+En conclusion, StageFlow représente une solution moderne et évolutive permettant de structurer
+efficacement le suivi des stages et l'encadrement des stagiaires dans un environnement numérique
+centralisé. Ce projet illustre l'importance des technologies web dans l'amélioration des processus
+de gestion académique et professionnelle, tout en mettant en avant les enjeux de sécurité, de
+traçabilité et de qualité logicielle dans le développement des applications modernes.
+
+\clearpage
+
+\chapter*{Bibliographie}
+
+\begin{thebibliography}{99}
+
+  \bibitem{React2024}
+  Facebook Inc. (2024). \textit{React: A JavaScript library for building user interfaces}.
+  Documentation officielle. Disponible sur : https://react.dev
+
+  \bibitem{NodeJS2024}
+  OpenJS Foundation (2024). \textit{Node.js: JavaScript Runtime built on Chrome's V8 JavaScript engine}.
+  Documentation officielle. Disponible sur : https://nodejs.org/docs
+
+  \bibitem{Express2024}
+  Express.js Contributors (2024). \textit{Express.js - Fast, unopinionated web framework for Node.js}.
+  Documentation officielle. Disponible sur : https://expressjs.com
+
+  \bibitem{PostgreSQL2024}
+  PostgreSQL Global Development Group (2024). \textit{PostgreSQL: The World's Most Advanced Open Source Relational Database}.
+  Documentation officielle. Disponible sur : https://www.postgresql.org/docs
+
+  \bibitem{JWT2015}
+  Jones, M., Bradley, J., \& Sakimura, N. (2015). \textit{JSON Web Token (JWT)} (RFC 7519).
+  Internet Engineering Task Force (IETF). Disponible sur : https://tools.ietf.org/html/rfc7519
+
+  \bibitem{Joi2024}
+  Hapi.js Contributors (2024). \textit{Joi: Data validation for JavaScript}. Documentation officielle.
+  Disponible sur : https://joi.dev
+
+  \bibitem{Git2024}
+  Software Freedom Conservancy (2024). \textit{Git: Fast Version Control System}.
+  Documentation officielle. Disponible sur : https://git-scm.com/doc
+
+\end{thebibliography}
 
 \end{document}
