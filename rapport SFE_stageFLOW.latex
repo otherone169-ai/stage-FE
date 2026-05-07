@@ -256,6 +256,29 @@ Le système garantit l'intégrité de ce cycle en empêchant les validations inc
 en enregistrant précisément l'auteur de chaque décision, la date de traitement et les
 remarques associées. Cette traçabilité est essentielle pour sécuriser l'évaluation académique
 et professionnelle, et pour constituer une archive fiable et auditable des livrables de stage.
+\section{Diagrammes UML}
+\label{sec:diagrammes-uml}
+Cette section rassemble les diagrammes UML utilisés pour documenter la modélisation
+et les interactions de la plateforme StageFlow. Les diagrammes fournissent une vue
+fonctionnelle et structurelle du système, en se concentrant sur les trois rôles
+implémentés (Administrateur, Superviseur, Étudiant) et leurs interactions avec les
+services exposés par l'application.
+
+\subsection{Diagramme des cas d'utilisation}
+\label{sec:usecases}
+Le diagramme des cas d'utilisation ci-dessous synthétise les principaux scénarios
+fonctionnels pris en charge par StageFlow : création et gestion des stages, création des
+comptes étudiants par le superviseur, suivi des tâches, encadrement et validation des
+rapports. Il illustre les services métier offerts par la plateforme sans évoquer de
+fonctions externes de recrutement ou de publication d'offres.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
+  \caption{Diagramme des cas d'utilisation : interactions entre Administrateur,
+  Superviseur et Étudiant}
+  \label{fig:usecase}
+\end{figure}
 
 \chapter{Parcours utilisateurs critiques}
 
@@ -407,12 +430,5 @@ comptes étudiants, du suivi des tâches avec historique des statuts, et du cycl
 validation des rapports. Les illustrations présentées dans les chapitres précédents
 documentent les points clés de la modélisation métier, des parcours utilisateurs et de
 l'architecture technique.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
-  \caption{Figure 4.2 :: Diagramme de cas d'utilisation : trois rôles et interactions}
-  \label{fig:usecase}
-\end{figure}
 
 \end{document}
