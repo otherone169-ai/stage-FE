@@ -390,9 +390,51 @@ compatibles avec son rôle métier. Les mots de passe sont hachés via bcrypt. L
 des actions sensibles sont enregistrés pour l'auditabilité et l'investigation en cas
 d'incident.
 
-\chapter{Sécurité, fiabilité et qualité}
+% Chapter 'Sécurité, fiabilité et qualité' moved into Chapter 7 as a section per request
 
-\section{Mécanismes de sécurité}
+\chapter{Interfaces utilisateur et captures d'écran}
+
+Le Chapitre 7 « Interfaces utilisateur et illustrations » devient un chapitre
+entièrement dédié aux captures d'écran de l'application StageFlow. Ce chapitre ne
+contiendra que les interfaces les plus importantes et représentatives du
+fonctionnement réel de la plateforme, afin d'illustrer concrètement les
+fonctionnalités principales implémentées.
+
+Sélectionner uniquement les captures pertinentes : authentification, tableau de bord
+administrateur, gestion des stagiaires, création de stage, gestion des tâches, suivi
+de progression, espace étudiant, gestion des rapports et workflow d'encadrement.
+Éviter les captures répétitives ou secondaires afin de conserver une présentation
+professionnelle, lisible et cohérente avec un rapport de mémoire.
+
+Chaque capture doit être accompagnée :
+\begin{itemize}
+  \item d'un titre académique clair ;
+  \item d'une courte description fonctionnelle ;
+  \item d'une explication du rôle de l'interface dans le workflow global de StageFlow.
+\end{itemize}
+
+Les images seront insérées ci-dessous lorsque vous les fournirez. Pour l'instant
+chaque section contient une zone réservée (placeholder) indiquant l'image attendue
+et laissant la place pour l'insertions ultérieure.
+
+\section{7.1 Authentification — Écran de connexion}
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : authentification (écran de connexion)}}
+  \caption{Authentification — Écran de connexion (image fournie ultérieurement)}
+  \label{fig:auth}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Écran permettant à un utilisateur (Administrateur, Superviseur, Étudiant) de se
+connecter via identifiants protégés. Gère les erreurs d'authentification et les
+redirections selon le rôle.
+
+\paragraph{Rôle dans le workflow}
+Point d'entrée sécurisé de la plateforme; contrôle l'accès aux ressources en appliquant
+le RBAC et initialise le contexte utilisateur pour les parcours suivants.
+
+\section{7.10 Sécurité, fiabilité et qualité}
+\subsection{Mécanismes de sécurité}
 
 La sécurité de StageFlow est traitée comme une exigence transversale, intégrée à tous
 les niveaux de l'application. L'authentification par JWT protège les accès aux ressources
@@ -407,7 +449,7 @@ système. La gestion centralisée des erreurs limite les fuites d'information te
 dans les réponses renvoyées au client, prévenant l'exposition involontaire de détails
 d'implémentation.
 
-\section{Qualité et robustesse}
+\subsection{Qualité et robustesse}
 
 La qualité de la plateforme repose sur la cohérence des workflows métier, la stabilité
 des composants techniques et la vérification continue du comportement applicatif. Les
@@ -416,94 +458,129 @@ création et gestion des stages, création des comptes étudiants, assignation e
 tâches, suivi de l'avancement et validation des rapports.
 
 La robustesse est renforcée par une structuration claire du code (routes, contrôleurs,
-middlewares, validations), une gestion explicite et documenti des erreurs, et une
+middlewares, validations), une gestion explicite et documentée des erreurs, et une
 modélisation relationnelle cohérente dans PostgreSQL. Des revues régulières des
 dépendances et des configurations de sécurité contribuent à limiter la dette technique
 et à maintenir un niveau de fiabilité compatible avec un usage réel en environnement
 académique et professionnel.
 
-\chapter{Interfaces utilisateur et illustrations}
-
-Les interfaces principales de StageFlow sont structurées autour de l'authentification
-sécurisée, des tableaux de bord adaptés à chaque rôle, de la gestion des stages et des
-comptes étudiants, du suivi des tâches avec historique des statuts, et du cycle de
-\chapter{Interfaces utilisateur et captures d'écran}
-
-Ce chapitre présente les captures et illustrations les plus représentatives du
-fonctionnement réel de l'application StageFlow disponibles dans le dépôt. Chaque
-élément est accompagné d'un titre académique, d'une brève description fonctionnelle
-et d'une explication de son rôle dans le workflow global. (Remarque : si vous
-préférez des captures d'écran réelles de l'interface utilisateur — authentification,
-tableau de bord, gestion des stagiaires, création de stage, gestion des tâches, espace
-étudiant, rapports — fournissez les images ou autorisez l'accès à l'application pour
-que je puisse réaliser des captures.)
-
-\section{7.1 Création et activation du compte étudiant (séquence)}
+\section{7.2 Tableau de bord administrateur}
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.jpg}
-  \caption{Diagramme de séquence : création du compte étudiant et activation}
-  \label{fig:seq-compte}
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : tableau de bord administrateur}}
+  \caption{Tableau de bord Administrateur (image fournie ultérieurement)}
+  \label{fig:dashboard-admin}
 \end{figure}
 \paragraph{Description fonctionnelle}
-Ce diagramme représente la séquence d'actions depuis la création manuelle du compte
-par le superviseur jusqu'à l'envoi du courriel d'activation et la première connexion
-de l'étudiant. Il illustre les échanges backend/frontend et le rôle du service d'e-mail.
+Vue synthétique des indicateurs système : nombre d'utilisateurs, stages actifs,
+alertes et accès rapides aux fonctions d'administration.
 
 \paragraph{Rôle dans le workflow}
-Illustre le point d'entrée de l'étudiant dans la plateforme : création de compte par
-le superviseur après acceptation physique, activation du compte et accès à l'espace
-personnel.
+Permet à l'administrateur de superviser l'état global du système, gérer les comptes
+et intervenir en cas d'incident ou d'anomalie.
 
-\section{7.2 Suivi de l'avancement et des tâches (diagramme d'activités)}
+\section{7.3 Gestion des stagiaires}
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/diagramactivitesuravancementetsuivi.jpg}
-  \caption{Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
-  \label{fig:activite-suivi}
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des stagiaires}}
+  \caption{Gestion des stagiaires — liste et fiche (image fournie ultérieurement)}
+  \label{fig:manage-students}
 \end{figure}
 \paragraph{Description fonctionnelle}
-Diagramme décrivant le flux d'activités lié à la création, l'exécution, la revue et la
-validation des tâches. Il met en évidence les statuts de tâche, les actions de
-remise/révision et la boucle de feedback entre étudiant et superviseur.
+Interface listant les stagiaires, permettant la création/modification des fiches
+et l'affectation aux stages.
 
 \paragraph{Rôle dans le workflow}
-Présente la logique opérationnelle du suivi quotidien : assignation des tâches,
-mise à jour des statuts, remontée des blocages et itérations de correction.
+Outil central pour le superviseur : associer un étudiant à un stage, suivre ses
+informations et historique administratif.
 
-\section{7.3 Modèle de données (diagramme de classes UML)}
+\section{7.4 Création de stage}
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
-  \caption{Diagramme de classes UML : entités principales et relations}
-  \label{fig:uml-classes}
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : création de stage}}
+  \caption{Création de stage — formulaire de saisie (image fournie ultérieurement)}
+  \label{fig:create-internship}
 \end{figure}
 \paragraph{Description fonctionnelle}
-Diagramme de classes présentant les principales entités persistées (utilisateurs,
-étudiants, superviseurs, stages, tâches, rapports) et leurs relations. Sert de
-référence pour la conception de la base de données PostgreSQL.
+Formulaire de création d'un stage : titre, description, dates, objectifs pédagogiques
+et superviseur référent.
 
 \paragraph{Rôle dans le workflow}
-Fournit la vue structurelle essentielle pour comprendre la persistance des objets
-métiers et les contraintes d'intégrité relatives aux opérations (création de compte,
-affectation de tâches, historisation des actions).
+Permet d'enregistrer l'entité stage qui servira de conteneur aux tâches, au suivi
+et à la production du rapport final.
 
-\section{7.4 Diagramme des cas d'utilisation}
+\section{7.5 Gestion des tâches}
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
-  \caption{Diagramme de cas d'utilisation : interactions fonctionnelles entre les trois rôles}
-  \label{fig:usecase}
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des tâches}}
+  \caption{Gestion des tâches — création et suivi (image fournie ultérieurement)}
+  \label{fig:tasks}
 \end{figure}
 \paragraph{Description fonctionnelle}
-Vue synthétique des cas d'utilisation supportés par StageFlow : gestion des stages,
-gestion des comptes étudiants, assignation et suivi des tâches, revue et validation des
-rapports. Ce diagramme met l'accent sur les services fournis par la plateforme sans
-intégrer les processus de recrutement externes.
+Interface permettant la création, l'assignation, la mise à jour des statuts et la
+remise de livrables pour chaque tâche.
 
 \paragraph{Rôle dans le workflow}
-Offre une vue globale des responsabilités par rôle et des scénarios fonctionnels
-clés, utile pour les revues fonctionnelles et la définition des tests de validation.
+Outil opérationnel pour découper la mission en tâches, suivre l'avancement et
+consigner les retours de l'encadrement.
+
+\section{7.6 Suivi de progression}
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : suivi de progression}}
+  \caption{Suivi de progression — indicateurs et timeline (image fournie ultérieurement)}
+  \label{fig:progress}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Vue consolidée des indicateurs de progression : tâches achevées, jalons atteints,
+et tendances temporelles.
+
+\paragraph{Rôle dans le workflow}
+Permet d'évaluer l'avancement global du stagiaire et d'anticiper les actions de
+remédiation si nécessaire.
+
+\section{7.7 Espace étudiant}
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : espace étudiant}}
+  \caption{Espace étudiant — tableau personnel et soumission de livrables (image fournie ultérieurement)}
+  \label{fig:student-space}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Tableau de bord personnel de l'étudiant : tâches assignées, échéances, messages et
+accès au formulaire de rédaction/soumission du rapport.
+
+\paragraph{Rôle dans le workflow}
+Interface principale de l'étudiant pour exécuter le travail, soumettre des livrables
+et consulter les retours du superviseur.
+
+\section{7.8 Gestion des rapports}
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des rapports}}
+  \caption{Gestion des rapports — soumission et workflow de revue (image fournie ultérieurement)}
+  \label{fig:reports}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Interface de soumission et de revue du rapport de stage, avec historique des
+versions et commentaires du superviseur.
+
+\paragraph{Rôle dans le workflow}
+Conclut le cycle pédagogique : réception, revue et validation formelle du rapport.
+
+\section{7.9 Workflow d'encadrement (vue synthétique)}
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : workflow d'encadrement — synthèse}}
+  \caption{Workflow d'encadrement — synthèse des interactions (image fournie ultérieurement)}
+  \label{fig:workflow}
+\end{figure}
+\paragraph{Description fonctionnelle}
+Vue synthétique montrant les interactions essentielles entre superviseur et étudiant
+autour des tâches, des retours et de la validation des livrables.
+
+\paragraph{Rôle dans le workflow}
+Fournit une vision d'ensemble utile pour les jurys et la documentation académique.
 
 
 \end{document}
