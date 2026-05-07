@@ -73,26 +73,6 @@
   --danger-light: #fee2e2;
 }
 
-[data-theme="dark"] {
-  --bg-main: #0f1417;
-  --bg-secondary: #1a1f25;
-  --text-primary: #f0f4f1;
-  --text-muted: #a0b0a8;
-  --accent: #0f8b8d;
-  --accent-alt: #ff7a59;
-  --danger: #ef4444;
-  --border: #2d3d38;
-  --shadow: 0 18px 35px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 8px 16px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.35);
-  --sidebar-bg: #141820;
-  --sidebar-fg: #e9f4ef;
-  --success-light: #064e3b;
-  --warning-light: #5f3a06;
-  --info-light: #1e3a8a;
-  --danger-light: #7f1d1d;
-}
-
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
@@ -815,21 +795,6 @@ textarea::placeholder {
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-.theme-toggle {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  padding: 6px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.theme-toggle[aria-pressed="true"] {
-  background: linear-gradient(120deg, var(--accent-alt), var(--accent));
-  color: #fff;
-  border-color: transparent;
 }
 
 .page-wrapper {
@@ -3422,7 +3387,6 @@ tbody tr:last-child td {
 @media print {
   .sidebar,
   .topbar,
-  .theme-toggle,
   button {
     display: none;
   }

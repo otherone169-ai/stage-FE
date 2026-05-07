@@ -102,11 +102,10 @@ export const getStudentDashboardStats = async (req, res, next) => {
       `SELECT 
         i.id, i.status, i.start_date, i.end_date,
         p.title as project_title, su.full_name as supervisor_name,
-        c.name as company_name
+        su.company_name as company_name
        FROM interns i
        JOIN projects p ON i.project_id = p.id
        JOIN supervisors su ON i.supervisor_id = su.id
-       JOIN companies c ON c.id = su.company_id
        WHERE i.student_id = $1
        ORDER BY i.created_at DESC`,
       [student.rows[0].id]
@@ -171,7 +170,7 @@ export const getAdminDashboardStats = async (req, res, next) => {
         (SELECT COUNT(*)::int FROM users WHERE role = 'student') as total_students,
         (SELECT COUNT(*)::int FROM users WHERE role = 'supervisor') as total_supervisors,
         (SELECT COUNT(*)::int FROM interns) as total_interns,
-        (SELECT COUNT(*)::int FROM companies) as total_companies,
+        (SELECT COUNT(DISTINCT company_name)::int FROM supervisors) as total_companies,
         (SELECT COUNT(*)::int FROM internships) as total_internships,
         (SELECT COUNT(*)::int FROM applications) as total_applications,
         (SELECT COUNT(*)::int FROM projects) as total_projects`
@@ -181,14 +180,13 @@ export const getAdminDashboardStats = async (req, res, next) => {
     const supervisorStats = await query(
       `SELECT 
         su.id, su.full_name, su.position,
-        c.name as company_name,
+        su.company_name,
         COUNT(DISTINCT i.id)::int as managed_students,
         COUNT(DISTINCT CASE WHEN i.status = 'active' THEN i.id END)::int as active_students,
         COUNT(DISTINCT CASE WHEN i.status = 'completed' THEN i.id END)::int as completed_students
        FROM supervisors su
-       JOIN companies c ON c.id = su.company_id
        LEFT JOIN interns i ON su.id = i.supervisor_id
-       GROUP BY su.id, su.full_name, su.position, c.name
+       GROUP BY su.id, su.full_name, su.position, su.company_name
        ORDER BY managed_students DESC`
     );
 

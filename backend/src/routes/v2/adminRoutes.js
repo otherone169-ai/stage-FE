@@ -1,9 +1,12 @@
 import express from "express";
 import {
   deleteUser,
+  getInternshipStatusDistribution,
+  getUsersDistribution,
   listApplications,
   listCompanyRhProfiles,
   listStudentProfiles,
+  listSupervisors,
   listUsers,
   suspendUser
 } from "../../controllers/v2/adminController.js";
@@ -21,5 +24,8 @@ router.delete("/users/:userId", deleteUser);
 router.get("/applications", listApplications);
 router.get("/companies-rh", listCompanyRhProfiles);
 router.get("/students", listStudentProfiles);
+router.get("/supervisors", listSupervisors);
+router.get("/analytics/users-distribution", getUsersDistribution);
+router.get("/analytics/internship-status", getInternshipStatusDistribution);
 
 export default router;

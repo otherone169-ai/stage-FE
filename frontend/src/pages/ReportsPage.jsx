@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
+import "../styles/reports-form.css";
 
 const ReportsPage = () => {
   const { user } = useAuth();
@@ -11,6 +12,8 @@ const ReportsPage = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ internId: "", title: "", content: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [charCount, setCharCount] = useState(0);
 
   const canValidate = user?.role === "supervisor";
   const isStudent = user?.role === "student";
@@ -44,24 +47,47 @@ const ReportsPage = () => {
     loadData();
   }, []);
 
+  const handleInputChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (field === 'content') {
+      setCharCount(value.length);
+    }
+  };
+
   const submitReport = async (event) => {
     event.preventDefault();
+    
+    // Validation simple
+    if (!form.title.trim() || !form.internId || !form.content.trim()) {
+      setError("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    
+    if (form.content.length < 50) {
+      setError("Le contenu doit contenir au moins 50 caractères");
+      return;
+    }
+
+    setIsSubmitting(true);
     setError("");
     setMessage("");
 
     try {
       const { data } = await apiClient.post("/reports", {
         internId: form.internId,
-        title: form.title,
-        content: form.content
+        title: form.title.trim(),
+        content: form.content.trim()
       });
 
       await apiClient.patch(`/reports/${data.id}/submit`);
       setForm({ internId: "", title: "", content: "" });
-      setMessage("Rapport soumis pour validation");
+      setCharCount(0);
+      setMessage("✅ Rapport soumis avec succès pour validation");
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.message || "Envoi du rapport impossible");
+      setError(err.response?.data?.message || "❌ Envoi du rapport impossible");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -101,37 +127,101 @@ const ReportsPage = () => {
   return (
     <div className="page-grid">
       {isStudent && (
-        <section className="card">
-          <h3>Soumettre un rapport</h3>
-          <form className="stack-form" onSubmit={submitReport}>
-            <input
-              placeholder="Titre"
-              value={form.title}
-              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              required
-            />
-            <select
-              value={form.internId}
-              onChange={(e) => setForm((prev) => ({ ...prev, internId: e.target.value }))}
-              required
+        <section className="reports-form-container">
+          <div className="reports-form-header">
+            <h2>Soumettre un rapport</h2>
+            <p className="reports-form-subtitle">
+              Partagez vos progrès et réalisations avec votre superviseur
+            </p>
+          </div>
+          
+          <form className="reports-form" onSubmit={submitReport}>
+            <div className="reports-form-group">
+              <label className="reports-form-label required">
+                Titre du rapport
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="reports-form-input"
+                  placeholder="Ex: Rapport hebdomadaire - Semaine 3"
+                  value={form.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                  maxLength={100}
+                />
+                <span className="reports-form-icon">📝</span>
+              </div>
+            </div>
+
+            <div className="reports-form-group">
+              <label className="reports-form-label required">
+                Stage concerné
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  className="reports-form-select"
+                  value={form.internId}
+                  onChange={(e) => handleInputChange('internId', e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value="">Sélectionner un stage</option>
+                  {interns.map((intern) => (
+                    <option key={intern.intern_id} value={intern.intern_id}>
+                      {intern.project_title 
+                        ? `${intern.project_title} (${intern.intern_status})` 
+                        : `Stage ${intern.intern_id}`
+                      }
+                    </option>
+                  ))}
+                </select>
+                <span className="reports-form-icon">💼</span>
+              </div>
+            </div>
+
+            <div className="reports-form-group">
+              <label className="reports-form-label required">
+                Contenu du rapport
+              </label>
+              <textarea
+                className="reports-form-textarea"
+                placeholder="Décrivez en détail vos activités, réalisations, difficultés rencontrées et objectifs atteints cette semaine..."
+                value={form.content}
+                onChange={(e) => handleInputChange('content', e.target.value)}
+                required
+                disabled={isSubmitting}
+                minLength={50}
+                maxLength={2000}
+              />
+              <div className={`reports-form-char-counter ${charCount > 1800 ? 'error' : charCount > 1500 ? 'warning' : ''}`}>
+                {charCount}/2000 caractères
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className={`reports-form-submit ${isSubmitting ? 'reports-form-loading' : ''}`}
+              disabled={isSubmitting}
             >
-              <option value="">Selectionner un stage</option>
-              {interns.map((intern) => (
-                <option key={intern.intern_id} value={intern.intern_id}>
-                  {intern.project_title ? `${intern.project_title} (${intern.intern_status})` : intern.intern_id}
-                </option>
-              ))}
-            </select>
-            <textarea
-              placeholder="Detaillez vos activites"
-              value={form.content}
-              onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
-              required
-            />
-            <button type="submit" className="primary-btn">
-              Soumettre le rapport
+              {isSubmitting ? 'Soumission en cours...' : '📤 Soumettre le rapport'}
             </button>
           </form>
+
+          {error && (
+            <div className="reports-form-error">
+              <span>⚠️</span>
+              {error}
+            </div>
+          )}
+          
+          {message && (
+            <div className="reports-form-success">
+              <span>✅</span>
+              {message}
+            </div>
+          )}
         </section>
       )}
 

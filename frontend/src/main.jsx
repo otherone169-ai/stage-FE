@@ -5,6 +5,9 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles.css";
 
+// Force light mode
+document.documentElement.setAttribute("data-theme", "light");
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

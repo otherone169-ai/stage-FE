@@ -22,7 +22,7 @@ export const getDashboard = async (req, res, next) => {
           `SELECT
             (SELECT COUNT(*)::int FROM users WHERE role = 'student') AS total_students,
             (SELECT COUNT(*)::int FROM supervisors) AS total_supervisors,
-            (SELECT COUNT(*)::int FROM companies) AS total_companies,
+            (SELECT COUNT(DISTINCT company_name)::int FROM supervisors) AS total_companies,
             (SELECT COUNT(*)::int FROM internships WHERE is_active = true) AS total_internships,
             (SELECT COUNT(*)::int FROM applications) AS total_applications,
             (SELECT COUNT(*)::int FROM interns) AS total_interns`
@@ -43,11 +43,10 @@ export const getDashboard = async (req, res, next) => {
           FROM applications`
         ),
         query(
-          `SELECT c.id, c.name, COUNT(s.id)::int AS supervisors_count
-           FROM companies c
-           LEFT JOIN supervisors s ON s.company_id = c.id
-           GROUP BY c.id, c.name
-           ORDER BY c.name ASC`
+          `SELECT company_name, COUNT(*)::int AS supervisors_count
+           FROM supervisors
+           GROUP BY company_name
+           ORDER BY company_name ASC`
         )
       ]);
 
@@ -69,70 +68,9 @@ export const getDashboard = async (req, res, next) => {
       });
     }
 
-    if (req.user.role === "company") {
-      const company = await query("SELECT id FROM companies WHERE user_id = $1", [req.user.id]);
-      if (company.rows.length === 0) {
-        return res.status(404).json({ message: "Company profile not found" });
-      }
-
-      const companyId = company.rows[0].id;
-      const [tasks, applications, summary] = await Promise.all([
-        query(
-          `SELECT
-             COUNT(*)::int AS total,
-             COUNT(*) FILTER (WHERE t.status = 'todo')::int AS todo,
-             COUNT(*) FILTER (WHERE t.status = 'in_progress')::int AS in_progress,
-             COUNT(*) FILTER (WHERE t.status = 'done')::int AS done
-           FROM tasks t
-           JOIN projects p ON p.id = t.project_id
-           JOIN internships i ON i.id = p.internship_id
-           WHERE i.company_id = $1`,
-          [companyId]
-        ),
-        query(
-          `SELECT
-             COUNT(*) FILTER (WHERE a.status = 'pending')::int AS pending,
-             COUNT(*) FILTER (WHERE a.status = 'accepted')::int AS accepted,
-             COUNT(*) FILTER (WHERE a.status = 'rejected')::int AS rejected
-           FROM applications a
-           JOIN internships i ON i.id = a.internship_id
-           WHERE i.company_id = $1`,
-          [companyId]
-        ),
-        query(
-          `SELECT
-             (SELECT COUNT(*)::int FROM internships WHERE company_id = $1) AS internships,
-             (SELECT COUNT(*)::int FROM internships WHERE company_id = $1 AND is_active = true) AS active_internships,
-             (SELECT COUNT(*)::int FROM supervisors WHERE company_id = $1) AS supervisors,
-             (SELECT COUNT(*)::int
-              FROM interns inr
-              JOIN projects p ON p.id = inr.project_id
-              JOIN internships i ON i.id = p.internship_id
-              WHERE i.company_id = $1) AS interns`,
-          [companyId]
-        )
-      ]);
-
-      const app = applications.rows[0];
-      const scopedSummary = summary.rows[0];
-
-      return res.json({
-        scope: "company",
-        companyId,
-        summary: {
-          internships: scopedSummary.internships,
-          activeInternships: scopedSummary.active_internships,
-          supervisors: scopedSummary.supervisors,
-          applications: Number(app.pending || 0) + Number(app.accepted || 0) + Number(app.rejected || 0),
-          interns: scopedSummary.interns
-        },
-        tasks: formatTasks(tasks.rows[0]),
-        applications: app
-      });
-    }
-
+    
     if (req.user.role === "supervisor") {
-      const supervisor = await query("SELECT id, company_id FROM supervisors WHERE user_id = $1", [req.user.id]);
+      const supervisor = await query("SELECT id, company_name FROM supervisors WHERE user_id = $1", [req.user.id]);
       if (supervisor.rows.length === 0) {
         return res.status(404).json({ message: "Supervisor profile not found" });
       }
@@ -251,7 +189,7 @@ export const getDashboard = async (req, res, next) => {
            LEFT JOIN interns inr ON inr.student_id = s.id
            LEFT JOIN projects p ON p.id = inr.project_id
            LEFT JOIN internships i ON i.id = p.internship_id
-           LEFT JOIN reports r ON r.student_id = s.id
+           LEFT JOIN reports r ON r.intern_id = inr.id
            WHERE s.id = $1`,
           [studentId]
         )

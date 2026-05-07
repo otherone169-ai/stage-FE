@@ -75,11 +75,11 @@ export const updateMyProfile = async (req, res, next) => {
 export const listMyApplications = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT a.id, a.status, a.applied_at, i.id AS internship_id, i.title, c.name AS company_name
+      `SELECT a.id, a.status, a.applied_at, i.id AS internship_id, i.title, s.company_name
        FROM applications a
        JOIN students s ON s.id = a.student_id
        JOIN internships i ON i.id = a.internship_id
-       JOIN companies c ON c.id = i.company_id
+       JOIN supervisors s ON s.id = i.supervisor_id
        WHERE s.user_id = $1
        ORDER BY a.applied_at DESC`,
       [req.user.id]

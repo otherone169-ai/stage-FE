@@ -179,7 +179,7 @@ export const listTasks = async (req, res, next) => {
       LEFT JOIN interns i ON i.project_id = p.id
       LEFT JOIN task_remarks tr ON tr.task_id = t.id
       ${whereClause}
-      GROUP BY t.id
+      GROUP BY t.id, t.project_id, t.title, t.description, t.deadline, t.status, t.created_at, t.updated_at, p.title
       ORDER BY t.deadline ASC, t.created_at DESC`,
       values
     );

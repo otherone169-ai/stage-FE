@@ -123,6 +123,94 @@ export const listStudentProfiles = async (req, res, next) => {
   }
 };
 
+export const listSupervisors = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT
+         u.id AS user_id,
+         u.email,
+         u.is_active,
+         u.created_at,
+         s.id AS supervisor_id,
+         s.full_name,
+         s.position,
+         s.company_name,
+         s.company_description,
+         s.company_website,
+         s.company_location,
+         (
+           SELECT COUNT(*)::int
+           FROM interns i
+           WHERE i.supervisor_id = s.id
+         ) AS interns_count,
+         (
+           SELECT COUNT(*)::int
+           FROM projects p
+           WHERE p.supervisor_id = s.id
+         ) AS projects_count
+       FROM users u
+       LEFT JOIN supervisors s ON s.user_id = u.id
+       WHERE u.role = 'supervisor'
+       ORDER BY s.full_name ASC NULLS LAST, u.created_at DESC`
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getUsersDistribution = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT 
+         role,
+         COUNT(*) as count
+       FROM users 
+       WHERE is_active = true
+       GROUP BY role`
+    );
+
+    const distribution = {
+      students: 0,
+      supervisors: 0,
+      admins: 0
+    };
+
+    result.rows.forEach(row => {
+      if (row.role === 'student') distribution.students = parseInt(row.count);
+      if (row.role === 'supervisor') distribution.supervisors = parseInt(row.count);
+      if (row.role === 'admin') distribution.admins = parseInt(row.count);
+    });
+
+    return res.json(distribution);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getInternshipStatusDistribution = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT 
+         COUNT(CASE WHEN i.moderation_status = 'pending' THEN 1 END) as pending,
+         COUNT(CASE WHEN i.moderation_status = 'approved' AND i.is_active = true THEN 1 END) as active,
+         COUNT(CASE WHEN i.moderation_status = 'approved' AND i.is_active = false THEN 1 END) as completed
+       FROM internships i`
+    );
+
+    const distribution = {
+      pending: parseInt(result.rows[0]?.pending || 0),
+      active: parseInt(result.rows[0]?.active || 0),
+      completed: parseInt(result.rows[0]?.completed || 0)
+    };
+
+    return res.json(distribution);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const listApplications = async (req, res, next) => {
   try {
     const result = await query(

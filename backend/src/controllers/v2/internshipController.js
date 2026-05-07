@@ -45,22 +45,22 @@ export const searchInternships = async (req, res, next) => {
     const params = [...values];
 
     if (req.user.role === "supervisor") {
-      const supervisor = await query("SELECT company_id FROM supervisors WHERE user_id = $1", [req.user.id]);
+      const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
       if (supervisor.rows.length === 0) {
         return res.status(404).json({ message: "Supervisor profile not found" });
       }
 
-      params.push(supervisor.rows[0].company_id);
-      whereParts.push(`i.company_id = $${params.length}`);
+      params.push(supervisor.rows[0].id);
+      whereParts.push(`i.supervisor_id = $${params.length}`);
     }
 
     const whereClause = whereParts.join(" AND ");
 
     const rows = await query(
-      `SELECT i.id, i.title, i.description, i.location, i.duration, i.domain, i.required_skills,
-              c.name AS company_name, i.created_at
+      `SELECT i.id, i.title, i.description, i.location, i.duration, i.domain, i.start_date, i.end_date, i.duration_weeks,
+              s.company_name, s.full_name AS supervisor_name, i.created_at
        FROM internships i
-       JOIN companies c ON c.id = i.company_id
+       JOIN supervisors s ON s.id = i.supervisor_id
        WHERE ${whereClause}
        ORDER BY i.created_at DESC
        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
@@ -87,26 +87,26 @@ export const searchInternships = async (req, res, next) => {
 
 export const createInternship = async (req, res, next) => {
   try {
-    const companyResult = await query("SELECT id FROM companies WHERE user_id = $1", [req.user.id]);
-    if (companyResult.rows.length === 0) {
-      return res.status(404).json({ message: "Company profile not found" });
+    const supervisorResult = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
+    if (supervisorResult.rows.length === 0) {
+      return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const payload = req.body;
     const result = await query(
       `INSERT INTO internships
-       (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
+       (supervisor_id, title, description, location, domain, start_date, end_date, duration_weeks, moderation_status, is_active)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', true)
        RETURNING *`,
       [
-        companyResult.rows[0].id,
+        supervisorResult.rows[0].id,
         payload.title,
         payload.description,
         payload.location || null,
-        payload.duration || null,
         payload.domain || null,
-        payload.requirements || null,
-        Array.isArray(payload.requiredSkills) ? payload.requiredSkills.join(",") : ""
+        payload.start_date || null,
+        payload.end_date || null,
+        payload.duration_weeks || null
       ]
     );
 
@@ -119,35 +119,34 @@ export const createInternship = async (req, res, next) => {
 
 export const updateInternship = async (req, res, next) => {
   try {
-    const companyResult = await query("SELECT id FROM companies WHERE user_id = $1", [req.user.id]);
-    if (companyResult.rows.length === 0) {
-      return res.status(404).json({ message: "Company profile not found" });
+    const supervisorResult = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
+    if (supervisorResult.rows.length === 0) {
+      return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const payload = req.body;
-    const requiredSkills = Array.isArray(payload.requiredSkills) ? payload.requiredSkills.join(",") : undefined;
 
     const result = await query(
       `UPDATE internships
        SET title = COALESCE($1, title),
            description = COALESCE($2, description),
            location = COALESCE($3, location),
-           duration = COALESCE($4, duration),
-           domain = COALESCE($5, domain),
-           requirements = COALESCE($6, requirements),
-           required_skills = COALESCE($7, required_skills)
-       WHERE id = $8 AND company_id = $9
+           domain = COALESCE($4, domain),
+           start_date = COALESCE($5, start_date),
+           end_date = COALESCE($6, end_date),
+           duration_weeks = COALESCE($7, duration_weeks)
+       WHERE id = $8 AND supervisor_id = $9
        RETURNING *`,
       [
         payload.title ?? null,
         payload.description ?? null,
         payload.location ?? null,
-        payload.duration ?? null,
         payload.domain ?? null,
-        payload.requirements ?? null,
-        requiredSkills ?? null,
+        payload.start_date ?? null,
+        payload.end_date ?? null,
+        payload.duration_weeks ?? null,
         req.params.id,
-        companyResult.rows[0].id
+        supervisorResult.rows[0].id
       ]
     );
 
@@ -164,17 +163,17 @@ export const updateInternship = async (req, res, next) => {
 
 export const updateInternshipStatus = async (req, res, next) => {
   try {
-    const companyResult = await query("SELECT id FROM companies WHERE user_id = $1", [req.user.id]);
-    if (companyResult.rows.length === 0) {
-      return res.status(404).json({ message: "Company profile not found" });
+    const supervisorResult = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
+    if (supervisorResult.rows.length === 0) {
+      return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const result = await query(
       `UPDATE internships
        SET is_active = $1
-       WHERE id = $2 AND company_id = $3
+       WHERE id = $2 AND supervisor_id = $3
        RETURNING *`,
-      [req.body.isActive, req.params.id, companyResult.rows[0].id]
+      [req.body.isActive, req.params.id, supervisorResult.rows[0].id]
     );
 
     if (result.rows.length === 0) {
@@ -216,14 +215,14 @@ export const moderateInternship = async (req, res, next) => {
 
 export const listMyInternships = async (req, res, next) => {
   try {
-    const company = await query("SELECT id FROM companies WHERE user_id = $1", [req.user.id]);
-    if (company.rows.length === 0) {
-      return res.status(404).json({ message: "Company profile not found" });
+    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
+    if (supervisor.rows.length === 0) {
+      return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const result = await query(
-      "SELECT * FROM internships WHERE company_id = $1 ORDER BY created_at DESC",
-      [company.rows[0].id]
+      "SELECT * FROM internships WHERE supervisor_id = $1 ORDER BY created_at DESC",
+      [supervisor.rows[0].id]
     );
 
     return res.json(result.rows);

@@ -13,6 +13,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ReportsPage from "./pages/ReportsPage";
+import ReportsPageEnhanced from "./pages/ReportsPageEnhanced";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import StudentProgressPage from "./pages/StudentProgressPage";
@@ -27,6 +28,8 @@ import NotificationsPage from "./pages/NotificationsPage";
 import SupervisorMyProjectsPage from "./pages/SupervisorMyProjectsPage";
 import SupervisorAddInternPage from "./pages/SupervisorAddInternPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
+import AdminSupervisorsPage from "./pages/AdminSupervisorsPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 
 const App = () => (
   <Routes>
@@ -123,7 +126,15 @@ const App = () => (
         path="admin/supervisors"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
-            <SupervisorsPage />
+            <AdminSupervisorsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="admin/analytics"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAnalyticsPage />
           </ProtectedRoute>
         }
       />
@@ -212,7 +223,7 @@ const App = () => (
         path="reports"
         element={
           <ProtectedRoute allowedRoles={["student", "supervisor"]}>
-            <ReportsPage />
+            <ReportsPageEnhanced />
           </ProtectedRoute>
         }
       />

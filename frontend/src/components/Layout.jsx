@@ -24,23 +24,6 @@ const Layout = () => {
 
   const initials = (user?.email || "").charAt(0).toUpperCase();
 
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem("theme") || "light";
-    } catch (e) {
-      return "light";
-    }
-  });
-
-  useEffect(() => {
-    try {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("theme", theme);
-    } catch (e) {
-      // ignore
-    }
-  }, [theme]);
-
   // Apply sidebar enhancement styles directly
   useEffect(() => {
     const enhanceSidebar = () => {
@@ -161,8 +144,6 @@ const Layout = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
-
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   return (
     <div className="app-shell">
@@ -289,9 +270,6 @@ const Layout = () => {
             <p>Role: {user?.role}</p>
           </div>
           <div className="topbar-actions">
-            <button type="button" className="theme-toggle" onClick={toggleTheme} aria-pressed={theme==="dark"}>
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
           </div>
         </header>
 

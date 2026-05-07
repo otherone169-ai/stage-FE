@@ -80,13 +80,13 @@ export const listMyReports = async (req, res, next) => {
         r.id, r.title, r.status, r.feedback, r.created_at, r.submitted_at, r.validated_at,
         i.id as intern_id, i.status as intern_status,
         int.title as internship_title,
-        c.name as company_name
+        sup.company_name
       FROM reports r
       JOIN interns i ON i.id = r.intern_id
       JOIN projects p ON p.id = i.project_id
       JOIN internships int ON int.id = p.internship_id
-      JOIN companies c ON c.id = int.company_id
-      WHERE r.student_id = $1
+      JOIN supervisors sup ON sup.id = int.supervisor_id
+      WHERE i.student_id = $1
       ORDER BY r.created_at DESC`,
       [student.rows[0].id]
     );
@@ -225,3 +225,4 @@ export const listReportsForValidation = async (req, res, next) => {
     return next(error);
   }
 };
+

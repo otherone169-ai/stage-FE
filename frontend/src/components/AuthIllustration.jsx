@@ -182,12 +182,7 @@ const AuthIllustration = () => {
           filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.1));
         }
 
-        @media (prefers-color-scheme: dark) {
-          .illustration {
-            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4));
-          }
-        }
-      `}</style>
+              `}</style>
     </div>
   );
 };
