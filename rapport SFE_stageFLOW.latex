@@ -1,4 +1,5 @@
-﻿% LaTeX reconstruction of RAPPORT_SFE_STAGEFLOW.pdf
+% LaTeX Final Report for StageFlow
+% Internal platform for internship management and supervision
 \documentclass[a4paper,11pt]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -22,7 +23,8 @@ Année universitaire : 2025-2026
 
 \begin{center}
 \LARGE Rapport de SFE\\[0.7em]
-\large Conception et développement d’une plateforme web de gestion des stages multi-rôles\\
+\large Conception et développement d'une plateforme interne de gestion\\
+et d'encadrement des stagiaires\\
 \normalsize Application : StageFlow
 \end{center}
 
@@ -41,286 +43,375 @@ Année universitaire : 2025-2026
 \chapter*{Remerciements}
 Je tiens à exprimer ma profonde gratitude à mon encadrant, Neuman Charhbili, pour son
 accompagnement rigoureux, ses orientations méthodologiques et sa disponibilité constante
-tout au long de ce projet de fin d’études.
-    Je remercie également l’ensemble du corps enseignant de l’École Supérieure de Tech-
-nologie – Agadir pour la qualité de la formation dispensée, qui m’a permis d’acquérir des
+tout au long de ce projet de fin d'études.
+    Je remercie également l'ensemble du corps enseignant de l'École Supérieure de Tech-
+nologie – Agadir pour la qualité de la formation dispensée, qui m'a permis d'acquérir des
 bases solides en ingénierie logicielle, en architecture des systèmes et en gestion de projet.
     Mes remerciements vont aussi à ma famille et à mes proches pour leur soutien moral,
 leur patience et leur encouragement durant toute la durée de ce travail.
 
 \clearpage
 \chapter*{Résumé}
-La gestion des stagiaires dans un cadre académique ou professionnel requiert des outils
-précis pour l’organisation, le suivi et la validation des travaux pratiques. StageFlow est
-une plateforme interne conçue pour répondre à ces besoins : elle permet aux superviseurs
-de créer et suivre des stages, de gérer les comptes étudiants, d’assigner et suivre des tâches
-et de centraliser les rapports de stage.
+StageFlow est une plateforme interne de gestion et de suivi des stagiaires conçue pour
+structurer et automatiser le processus d'encadrement académique et professionnel au
+sein d'une institution. La plateforme centralise l'ensemble du cycle de vie du stage :
+création du stage par le superviseur, génération du compte étudiant, suivi des tâches
+assignées, encadrement continu par remarques et validation des rapports finaux.
 
-Techniquement, la solution s’appuie sur un backend Node.js/Express, une base PostgreSQL
-pour la persistance et un frontend React/Vite pour l’interface utilisateur. La sécurité est
-assurée par JWT et un modèle RBAC simple (Administrateur, Superviseur, Étudiant). Les
-processus de création de compte étudiant sont manuels dans le sens où l’entrée en
-plateforme se fait après une acceptation hors ligne et la création du compte par le
-superviseur, qui déclenche l’envoi d’un courriel d’activation.
+    L'application adopte une architecture full-stack moderne avec un backend Node.js/Express
+sécurisé par JWT et RBAC, une validation stricte des données via Joi, et un frontend
+React/Vite offrant des interfaces adaptées aux trois rôles : Administrateur, Superviseur
+et Étudiant. La persistance des données est assurée par PostgreSQL avec un modèle
+relationnel robuste et auditable.
 
-Mots-clés : gestion interne des stagiaires, encadrement, React, Node.js, PostgreSQL,
-JWT, RBAC, dashboards.
+    Le système opère selon un flux clair : après une acceptation externe du stage, le
+superviseur crée le compte étudiant et envoie automatiquement une invitation d'activation
+par courriel. L'étudiant accède ensuite à la plateforme pour consulter ses tâches, suivre
+son avancement et soumettre son rapport. Toutes les interactions sont historisées pour
+assurer la traçabilité complète et l'auditabilité des décisions.
+
+    Mots-clés : gestion interne des stagiaires, plateforme d'encadrement, trois rôles,
+architecture MVC, JWT, RBAC, React, Node.js, PostgreSQL, supervision académique.
 
 \chapter{Introduction générale}
-La transformation numérique des organisations redéfinit en profondeur les modes de
-gestion des processus opérationnels. Dans ce cadre, la gestion des stages représente un
-enjeu majeur, puisqu’elle mobilise plusieurs acteurs, exige des échanges continus et impose
-une coordination rigoureuse entre les volets administratif, pédagogique et professionnel.
-Lorsque ces activités sont traitées au moyen d’outils hétérogènes (courriels, feuilles de
-calcul, documents isolés), le suivi devient fragmenté et les décisions manquent souvent de
-traçabilité.
+La gestion des stagiaires au sein d'une institution ou d'une structure d'accueil requiert
+une coordination rigoureuse entre plusieurs acteurs : superviseurs de stage, administrateurs
+et étudiants. Lorsque ces activités demeurent fragmentées (courriels, feuilles de calcul,
+dossiers isolés), le suivi devient inefficace, les décisions manquent de traçabilité et
+l'encadrement pédagogique s'en trouve compromis.
 
-Le projet StageFlow s’inscrit dans cette problématique en proposant une plateforme web
-multi-rôles destinée à couvrir l’ensemble du cycle de vie d’un stage. L’objectif n’est pas
-uniquement d’informatiser des tâches existantes, mais de structurer des workflows métier
-cohérents, audités et sécurisés, capables d’améliorer la qualité de service pour chaque
-partie prenante. La solution s’appuie sur une architecture full-stack moderne, avec une
-interface React/Vite, une API REST Node.js/Express et une base PostgreSQL, tout en
-intégrant des mécanismes de sécurité tels que JWT et RBAC.
+Le projet StageFlow répond à cette problématique en proposant une plateforme interne
+de gestion des stagiaires, spécifiquement conçue pour centraliser et structurer le processus
+d'encadrement. Son objectif n'est pas d'automatiser le recrutement ou la sélection des
+candidats (qui restent des processus externes ou manuels), mais de fournir un cadre
+fiable pour la gestion opérationnelle des stages une fois les étudiants acceptés : création
+et pilotage des stages, génération des comptes étudiants, assignation des tâches, suivi
+continu de la progression, collecte des remarques pédagogiques et validation des rapports.
 
-Ce rapport présente successivement la vision du projet, l’analyse fonctionnelle, les parcours
-utilisateurs critiques, les choix d’architecture technique, puis les dispositifs de sécurité,
-fiabilité et qualité mis en oeuvre pour garantir la robustesse de l’application.
+Cette approche améliore la communication entre superviseurs et étudiants, garantit la
+traçabilité complète des décisions et actions, et renforce la cohérence de l'encadrement
+académique. La plateforme s'appuie sur une architecture full-stack moderne avec une
+authentification sécurisée (JWT), un contrôle d'accès par rôles (RBAC) et une validation
+stricte des données (Joi).
+
+Ce rapport présente successivement la vision du projet, l'analyse fonctionnelle détaillée,
+les parcours utilisateurs critiques, l'architecture technique MVC retenue, puis les
+dispositifs de sécurité, fiabilité et qualité implémentés pour garantir la robustesse et
+l'auditabilité de l'application.
 
 \chapter{Présentation du projet}
-\section{Contexte général et justification}
-Dans de nombreuses structures, la gestion des stages souffre d’un manque d’intégration
-des outils utilisés par les superviseurs et les stagiaires. Cette dispersion de l’information
-crée des ruptures de flux : informations perdues, validations tardives, historique
-incomplet des décisions et difficulté à mesurer l’avancement réel des missions.
-Ces limites affectent à la fois l’efficacité opérationnelle de l’entreprise et la qualité de
-l’expérience vécue par l’étudiant.
 
-La justification de StageFlow repose donc sur la nécessité d’un système unifié, capable
-d’orchestrer de manière fiable les différentes phases du stage : enregistrement et
-affectation, encadrement, suivi des tâches et validation finale des livrables. En
-centralisant les données
-et en clarifiant les responsabilités par rôle, la plateforme réduit les ambiguïtés, améliore
-la communication entre acteurs et renforce la gouvernance du processus.
+\section{Contexte général et justification}
+Dans de nombreuses institutions, la gestion des stagiaires souffre d'une absence
+d'intégration entre les outils utilisés par les superviseurs, les administrateurs et les
+étudiants. Cette dispersion de l'information crée des ruptures opérationnelles : informations
+perdues entre courriels, validations tardives, historique incomplet des décisions et
+difficulté à mesurer l'avancement réel des missions et du travail accompli. Ces limites
+affectent à la fois l'efficacité opérationnelle de l'institution et la qualité de l'expérience
+vécue par l'étudiant stagiaire.
+
+La justification de StageFlow repose sur la nécessité d'un système unifié et interne,
+capable d'orchestrer de manière fiable et auditable les différentes phases du suivi d'un
+stage : enregistrement du stage, affectation et suivi des tâches, encadrement continu,
+collecte des remarques pédagogiques et validation finale des rapports. En centralisant les
+données et en clarifiant les responsabilités par rôle, la plateforme réduit les ambiguïtés,
+améliore la communication entre superviseurs et étudiants, et renforce la gouvernance et
+la traçabilité du processus.
 
 \section{Objectifs du projet}
+
 \textbf{Objectif principal}
-Concevoir, développer et déployer une plateforme web full‑stack dédiée à la gestion
-interne des stagiaires, permettant aux superviseurs de créer et de piloter les stages,
-de gérer les comptes étudiants, d’assurer le suivi des tâches et de valider les rapports,
-tout en fournissant des outils de supervision pour l’administrateur.
+
+Concevoir, développer et déployer une plateforme web full-stack interne dédiée à la
+gestion et au suivi des stagiaires, permettant aux superviseurs de créer et de piloter les
+stages, de gérer les comptes étudiants, d'assurer le suivi des tâches assignées, de fournir
+un encadrement continu et de valider les rapports finaux, tout en garantissant une
+sécurité robuste, une traçabilité complète et une auditabilité des actions.
 
 \textbf{Objectifs spécifiques}
+
 \begin{itemize}
-\item Fournir un flux opérationnel clair où le superviseur crée les stages et les comptes
-étudiants suite à une acceptation hors plateforme.
-\item Réduire les frictions administratives en automatisant l’envoi des courriels
-d’activation et en conservant un historique complet des actions.
-\item Garantir la sécurité des accès par JWT et RBAC, et valider strictement les données
-à l’entrée via Joi.
-\item Mettre à disposition des tableaux de bord et indicateurs pour le suivi pédagogique
-et l’analyse de l’activité (tâches, rapports, état d’avancement).
-\item Concevoir une architecture modulaire (API REST, MVC) facilitant la maintenance
-et l’évolution des fonctionnalités.
+\item Fournir un flux opérationnel clair où le superviseur crée le stage et les comptes
+étudiants après acceptation externe, et reçoit automatiquement une invitation d'activation.
+\item Automatiser l'envoi des notifications (invitations, rappels) et conserver un historique
+complet et auditable de toutes les actions et décisions.
+\item Mettre en place une sécurité robuste par authentification JWT et contrôle d'accès
+par rôles (RBAC), et valider strictement les données à l'entrée via Joi.
+\item Mettre à disposition des superviseurs et de l'administrateur des tableaux de bord
+et des indicateurs pour le suivi pédagogique, la progression des tâches et l'état des rapports.
+\item Concevoir une architecture modulaire (API REST, MVC) et testable facilitant la
+maintenance, l'évolution et l'intégration de nouvelles fonctionnalités.
 \end{itemize}
 
 \section{Périmètre fonctionnel}
-Le périmètre fonctionnel de StageFlow couvre les besoins coeur du processus de stage,
-avec une séparation claire entre les responsabilités de chaque acteur et un chaînage logique
-des opérations. La plateforme prend en charge :
+
+Le périmètre fonctionnel de StageFlow couvre les besoins cœur du processus de suivi
+des stagiaires au sein d'une institution, avec une séparation claire entre les responsabilités
+de chaque acteur et un chaînage logique des opérations. La plateforme prend en charge :
+
 \begin{itemize}
-\item L’authentification, l’autorisation et la gestion des profils utilisateurs.
-\item L’administration des entités cœur : étudiants, superviseurs et structures d’accueil.
+\item L'authentification fiable, l'autorisation basée sur les rôles et la gestion des profils
+utilisateurs.
+\item L'administration des entités cœur : étudiants/stagiaires, superviseurs et structures
+d'accueil (sociétés, organisations).
 \item La création et la gestion des stages par les superviseurs (description, dates,
-  encadrement), ainsi que la gestion manuelle des comptes étudiants associés.
-\item La planification et le suivi du travail via des tâches, statuts de progression et
-  retours d’encadrement.
-\item La gestion documentaire du rapport de stage : rédaction, soumission, revue et
-  décision finale par le superviseur.
-\item La supervision par indicateurs pour appuyer le pilotage pédagogique et
-  administratif.
+objectifs, encadrement), ainsi que la gestion manuelle des comptes étudiants associés.
+\item L'assignation et le suivi du travail via des tâches avec statuts de progression et
+retours d'encadrement du superviseur.
+\item La gestion documentaire du rapport de stage : rédaction par l'étudiant, soumission,
+revue par le superviseur et décision finale (validation ou demande de corrections).
+\item L'audit et la supervision par des indicateurs pour appuyer le pilotage pédagogique
+et administratif.
 \end{itemize}
 
-Les fonctionnalités avancées hors coeur de métier (intégrations externes complexes,
-analytique prédictive, signatures électroniques) ne constituent pas le périmètre principal
-de cette version, mais l’architecture retenue permet leur ajout progressif.
+Le système n'inclut pas de module de publication d'offres, de recherche d'opportunités
+ou de candidature autonome par les étudiants (ces processus relèvent d'une gestion externe
+ou manuelle antérieure à l'entrée dans StageFlow). Les fonctionnalités avancées hors périmètre
+cœur (intégrations complexes, analytique prédictive, signatures électroniques) ne constituent
+pas le principal de cette version, mais l'architecture retenue en facilite l'ajout progressif.
 
 \chapter{Analyse fonctionnelle détaillée}
+
 \section{Identification des acteurs et responsabilités}
-Le système met en interaction trois acteurs principaux, chacun disposant d’un champ de
-responsabilité clairement défini : l’Administrateur, le Superviseur et l’Étudiant.
 
-L’Administrateur assure la gouvernance de la plateforme : gestion technique des comptes
-et des permissions, surveillance des logs et maintenance. Les comptes administrateurs
-sont créés et gérés manuellement au niveau de la base de données par les opérateurs du
-service.
+Le système met en interaction trois acteurs principaux, chacun disposant d'un champ de
+responsabilité clairement défini afin d'éviter les chevauchements décisionnels et assurer
+une gouvernance efficace.
 
-Le Superviseur est l’acteur opérationnel central : il s’inscrit librement, crée et gère les
-stages (description, dates, affectations), crée les comptes étudiants nécessaires et suit
-leur avancement via des tâches et des remarques. Lorsqu’un superviseur crée un compte
-étudiant, le système envoie automatiquement un courriel d’activation permettant à
-l’étudiant de définir son mot de passe.
+\textbf{L'Administrateur} assure la gouvernance technique et administrative de la
+plateforme : gestion des comptes et des permissions, surveillance de la cohérence et de
+l'intégrité des données, contrôle des accès, consultation des logs et supervision des
+incidents de sécurité. Les comptes administrateurs sont créés manuellement au niveau de
+la base de données par les opérateurs du service, garantissant un contrôle strict de ce
+rôle privilégié.
 
-L’Étudiant dispose d’un compte créé par le superviseur et accède à son espace de travail
-pour consulter les tâches, mettre à jour son avancement et soumettre son rapport final.
-Chaque action est historisée afin d’assurer la traçabilité des décisions et des validations.
+\textbf{Le Superviseur} est l'acteur opérationnel central. Il s'inscrit librement via
+l'authentification standard et dispose de l'ensemble des responsabilités d'encadrement :
+création et gestion des stages (description, dates, objectifs, affectations), création des
+comptes étudiants nécessaires, assignation des tâches granulaires, suivi de l'avancement,
+fourniture de remarques pédagogiques et expertise sur le rapport soumis. Lorsqu'un
+superviseur crée un compte étudiant, le système envoie automatiquement un courriel
+d'activation permettant à l'étudiant de définir son mot de passe et accéder à la plateforme.
+
+\textbf{L'Étudiant} (ou stagiaire) dispose d'un compte créé par le superviseur et accède
+à son espace personnel dédié au stage. Il consulte les tâches assignées, met à jour son
+avancement, consulte les remarques du superviseur et soumet son rapport final via
+l'interface. Chaque action est historisée pour assurer la traçabilité complète et permettre
+aux superviseurs et à l'administrateur d'auditer le suivi pédagogique.
+
+Cette répartition des trois rôles soutient une gouvernance responsable et auditable du
+processus, où chaque action est traçable et reliée à un acteur identifié.
 
 \section{Besoins fonctionnels}
-\subsection{Gestion de l’authentification et des comptes}
-Le système doit permettre l’inscription, l’authentification, la gestion de session et la
-récupération de compte de manière fiable et sécurisée. Dans un environnement multi-rôles,
-la gestion des identités ne se limite pas à la connexion ; elle implique aussi un contrôle
-fin des permissions selon les responsabilités métier.
 
-L’application met en oeuvre une authentification par jeton JWT, accompagnée de méca-
-nismes de validation des entrées, de vérification d’état du compte et de protection des
-routes sensibles. La gestion des mots de passe suit des pratiques de sécurité adaptées
-(hachage, règles de robustesse, renouvellement), afin de réduire les risques de compro-
-mission des accès.
+\subsection{Gestion de l'authentification et des comptes}
+
+Le système doit permettre l'authentification, la gestion de session et la récupération de
+compte de manière fiable et sécurisée. Dans un environnement multi-rôles, la gestion des
+identités ne se limite pas à la connexion ; elle implique aussi un contrôle fin des permissions
+selon les responsabilités métier assignées à chaque rôle.
+
+L'application implémente une authentification par jeton JWT (JSON Web Token),
+accompagnée de mécanismes de validation stricte des entrées, de vérification de l'état du
+compte et de protection des routes sensibles. La gestion des mots de passe suit des
+pratiques de sécurité solides : hachage bcrypt, règles de robustesse, possibilité de
+renouvellement, afin de réduire les risques de compromission des accès.
 
 \subsection{Gestion des stages et des comptes étudiants}
+
 Dans StageFlow, la création et la gestion des stages sont réalisées par les superviseurs.
-Un stage comporte une description, des dates de début et de fin, des objectifs et les
-éléments d’encadrement (superviseur responsable, lieu, structure d’accueil). Le
-superviseur peut, selon les besoins, créer les comptes étudiants associés au stage ; la
-création d’un compte déclenche l’envoi d’un courriel d’activation pour permettre à
-l’étudiant de définir son mot de passe.
+Un stage comporte une description claire, des dates de début et de fin, des objectifs
+opérationnels et les éléments d'encadrement (superviseur responsable, lieu, structure
+d'accueil). Le superviseur crée manuellement les comptes étudiants associés aux stages ;
+chaque création de compte déclenche automatiquement l'envoi d'un courriel d'activation
+permettant à l'étudiant de définir son mot de passe et accéder à la plateforme.
 
-Le système conserve l’historique des modifications (qui a créé/modifié quel stage,
-dates et commentaires) afin d’assurer la traçabilité. Il ne gère pas de module de
-publication d’offres ni de candidatures autonomes par les étudiants : l’admission au stage
-et la création du compte étudiant relèvent d’un processus externe au système ou d’un
-traitement manuel par le superviseur.
+Le système conserve un historique complet des modifications (qui a créé/modifié quel
+stage, dates d'action, commentaires), assurant la traçabilité et l'auditabilité. Le système
+ne gère pas de module de publication d'offres ni de candidatures autonomes : l'admission
+au stage et la création du compte étudiant relèvent d'un processus externe antérieur ou
+d'un traitement manuel par le superviseur basé sur des critères de sélection hors plateforme.
 
-\subsection{Gestion de l’encadrement et de l’exécution}
-Après acceptation de la candidature, le besoin fonctionnel se déplace vers l’encadrement
-du travail. Le superviseur doit pouvoir structurer la mission en objectifs opérationnels,
-créer des tâches granulaires, fixer des échéances et observer l’évolution des statuts.
+\subsection{Gestion de l'encadrement et du suivi des tâches}
 
-Le stagiaire, de son côté, doit disposer d’un espace clair pour mettre à jour son avancement,
-signaler des blocages et recevoir des remarques exploitables. Le système doit maintenir un
-historique des interactions (commentaires, changements de statut, dates de mise à jour)
-afin de soutenir l’évaluation continue et la capitalisation des retours d’expérience.
+Une fois le compte étudiant créé et le stage enregistré, la plateforme structure le travail
+opérationnel par des tâches. Le superviseur décompose la mission en tâches granulaires,
+fixe des échéances et observe l'évolution des statuts (créée, en cours, terminée, retour
+attendu, etc.). L'étudiant accède à son espace personnel pour mettre à jour l'avancement
+de ses tâches, signaler des blocages et recevoir des remarques exploitables du superviseur.
 
-\subsection{Gestion des rapports}
-La gestion des rapports constitue la phase de clôture du stage. Le stagiaire doit pouvoir
-préparer et soumettre son document final dans un format exploitable, tandis que le super-
-viseur doit disposer d’un workflow de revue lui permettant d’accepter, de demander des
-corrections ou de rejeter la version proposée.
+Le système maintient un historique complet des interactions : commentaires, changements
+de statut, dates de mise à jour, auteur de chaque action. Cette traçabilité soutient
+l'évaluation continue et permet une capitalisation des retours d'expérience en fin de cycle.
 
-Le système doit garantir l’intégrité de ce cycle en empêchant les validations incohérentes,
-en enregistrant l’auteur de la décision, la date de traitement et les remarques associées.
-Cette traçabilité est essentielle pour sécuriser l’évaluation académique et professionnelle,
-et pour constituer une archive fiable des livrables de stage.
+\subsection{Gestion des rapports de stage}
+
+La gestion des rapports constitue la phase de clôture du stage. L'étudiant rédige et
+soumet son document final via l'interface (format texte, fichier ou autre selon la
+plateforme). Le superviseur dispose d'un workflow de revue lui permettant d'examiner le
+rapport, de l'accepter ou de demander des corrections et des révisions, assurant la qualité
+pédagogique et professionnelle des livrables.
+
+Le système garantit l'intégrité de ce cycle en empêchant les validations incohérentes,
+en enregistrant précisément l'auteur de chaque décision, la date de traitement et les
+remarques associées. Cette traçabilité est essentielle pour sécuriser l'évaluation académique
+et professionnelle, et pour constituer une archive fiable et auditable des livrables de stage.
 
 \chapter{Parcours utilisateurs critiques}
+
 \section{Parcours étudiant}
-Le parcours étudiant dans StageFlow suppose que le compte étudiant a été créé par un
-superviseur. Après réception du courriel d’activation, l’étudiant définit son mot de passe
-et complète son profil. Il accède ensuite à l’espace du stage auquel il est rattaché, où
-sont disponibles les tâches, les objectifs et les remarques du superviseur.
 
-L’étudiant met à jour son avancement, répond aux remarques et soumet son rapport final
-via l’interface. Toutes les actions pertinentes sont historisées pour permettre aux
-superviseurs et à l’administrateur d’auditer le suivi pédagogique.
+Le parcours étudiant débute après la création de son compte par un superviseur. L'étudiant
+reçoit un courriel d'activation contenant un lien de réinitialisation de mot de passe. Après
+définition de son mot de passe, il accède à son espace personnel de la plateforme.
 
+Une fois authentifié, l'étudiant consulte le stage auquel il est rattaché, les objectifs
+définis par le superviseur, et l'ensemble des tâches qui lui ont été assignées. Il met
+régulièrement à jour le statut de chaque tâche pour refléter sa progression réelle, et
+consulte les remarques pédagogiques et conseils fournis par le superviseur.
 
+Le parcours s'achève par la rédaction et la soumission du rapport final. L'étudiant
+peut suivre l'état de son rapport au sein de la plateforme (en attente de revue, corrections
+demandées, approuvé, etc.). Toutes les actions de l'étudiant sont historisées afin de
+permettre une auditabilité complète et un suivi pédagogique documenté.
 
 \section{Parcours superviseur}
-Le parcours superviseur commence dès l’affectation d’un stagiaire à une mission. Le
-superviseur définit le cadre opérationnel, précise les objectifs attendus et décompose le
-travail en tâches planifiées. Il suit ensuite l’exécution au fil des mises à jour réalisées par
-le stagiaire et produit des remarques régulières pour orienter la progression.
 
-Son rôle comporte également une dimension qualitative : il vérifie la pertinence des
-livrables, identifie les écarts éventuels et propose des actions correctives. En fin de cycle,
-il traite le rapport soumis (validation ou demande de révision) en s’appuyant sur des
-critères explicites, ce qui garantit une clôture formelle et traçable du stage.
+Le parcours superviseur s'amorce dès son inscription et la création d'un stage. Le
+superviseur s'inscrit librement via l'authentification standard de la plateforme. Il crée
+ensuite un stage en fournissant la description, les dates, les objectifs pédagogiques et les
+références de la structure d'accueil.
+
+Une fois le stage enregistré, le superviseur crée les comptes étudiants associés. Chaque
+création de compte déclenche l'envoi automatique d'un courriel d'activation permettant
+à l'étudiant de se connecter. Le superviseur définit ensuite le cadre opérationnel : il
+décompose la mission en tâches planifiées, fixe les échéances, et assigne chaque tâche à
+l'étudiant.
+
+Tout au long du stage, le superviseur suit l'avancement des tâches, fournit des remarques
+régulières pour orienter la progression et soutenir l'apprentissage, identifie les écarts
+éventuels et propose des actions correctives. En fin de cycle, il traite le rapport soumis :
+il examine le contenu, valide ou demande des révisions en s'appuyant sur des critères
+explicites et pédagogiques. Sa décision finale garantit une clôture formelle et traçable du
+stage.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/AjoutStagaire.png}
-  \caption{Figure 3.1 :: Diagramme de séquence du processus d'activation du compte et suivi de stage}
-  \label{fig:seq-candidature}
+  \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.jpg}
+  \caption{Figure 3.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
+  \label{fig:seq-compte}
 \end{figure}
-% Updated caption to reflect account activation and stage follow-up
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/diagramactivitesuravancementetsuivi.jpg}
+  \caption{Figure 3.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
+  \label{fig:activite-suivi}
+\end{figure}
 
 \chapter{Architecture technique}
-\section{Architecture globale}
-StageFlow adopte une architecture client-serveur en trois couches logiques : présentation,
-services applicatifs et persistance des données. La couche présentation est assurée par le
-frontend React/Vite, qui offre des interfaces dynamiques orientées rôle. La couche services
-est implémentée avec Node.js/Express et expose une API REST structurée par domaines
-fonctionnels. La couche données repose sur PostgreSQL, garantissant l’intégrité relation-
-nelle et la cohérence transactionnelle.
 
-Cette organisation favorise la séparation des responsabilités, la maintenabilité du code et
-l’évolutivité de la plateforme. Les contrôleurs orchestrent la logique métier, les middlewares
-assurent les préoccupations transversales (authentification, validation, gestion d’erreurs),
-et la base de données matérialise les règles d’intégrité via contraintes, clés étrangères et
-index adaptés aux requêtes fréquentes.
+\section{Architecture globale}
+
+StageFlow adopte une architecture client-serveur en trois couches logiques :
+présentation, services applicatifs et persistance des données.
+
+La couche présentation est assurée par le frontend React/Vite, qui fournit des interfaces
+réactives, modulaires et adaptées à chaque rôle utilisateur. La couche services est
+implémentée avec Node.js/Express et expose une API REST structurée par domaines
+fonctionnels (authentification, stages, tâches, rapports, administration). La couche
+données repose sur PostgreSQL, garantissant l'intégrité relationnelle et la cohérence
+transactionnelle des opérations critiques.
+
+Cette organisation favorise une séparation claire des responsabilités, améliore la
+maintenabilité du code et facilite l'évolutivité de la plateforme. Les contrôleurs
+orchestrent la logique métier, les middlewares assurent les préoccupations transversales
+(authentification, validation, gestion d'erreurs, logging), et la base de données
+matérialise les règles d'intégrité via contraintes de clés étrangères, index adaptés et
+historisation des actions critiques.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
-  \caption{Figure 4.1 :: Diagramme de classes UML des entités principales}
+  \caption{Figure 4.1 :: Diagramme de classes UML : entités principales et relations}
   \label{fig:uml-classes}
 \end{figure}
 
 \section{Stack technologique}
-Le choix technologique a été guidé par des critères de performance, de productivité et
-de maintenabilité dans un contexte full-stack moderne.
 
-Frontend : React et Vite permettent de construire une interface réactive, modulaire et
-rapide au chargement. Axios est utilisé pour la communication HTTP avec l’API, avec une
-gestion centralisée des en-têtes d’authentification et des erreurs réseau.
+Le choix de la stack technologique a été guidé par des critères de performance,
+de productivité, de maintenabilité et de sécurité dans un contexte full-stack moderne.
 
-Backend : Node.js et Express offrent un socle léger et efficace pour implémenter des API
-REST. Joi est utilisé pour la validation stricte des données entrantes, afin d’éviter les
-incohérences dès la couche d’entrée. JWT soutient la gestion de l’authentification stateless,
-tandis que le modèle RBAC encadre les autorisations selon le rôle connecté.
+\textbf{Frontend :} React et Vite permettent de construire une interface réactive,
+modulaire et rapide au chargement. Axios est utilisé pour la communication HTTP avec
+l'API backend, avec une gestion centralisée des en-têtes d'authentification JWT et une
+gestion cohérente des erreurs réseau.
 
-Base de données : PostgreSQL assure une persistance robuste des données métier. Son
-modèle relationnel facilite la traçabilité des workflows liés aux stages, aux tâches et
-aux rapports, et permet d’optimiser les performances via une indexation ciblée.
+\textbf{Backend :} Node.js et Express offrent un socle léger et efficace pour
+implémenter une API REST. Joi est utilisé pour la validation stricte et déclarative des
+données entrantes, bloquant les incohérences dès la couche d'entrée. JWT soutient
+l'authentification stateless et sécurisée, tandis que le modèle RBAC (Role-Based Access
+Control) encadre les autorisations selon le rôle de l'utilisateur connecté.
+
+\textbf{Base de données :} PostgreSQL assure une persistance robuste et fiable des
+données métier. Son modèle relationnel facilite la traçabilité des workflows critiques
+liés aux stages, aux tâches, aux remarques et aux rapports. Les index ciblés et les
+contraintes d'intégrité optimisent les performances et garantissent la cohérence.
+
+\section{Sécurité et validation}
+
+La validation des données est implémentée via Joi au niveau des routes, bloquant les
+requêtes invalides avant traitement. L'authentification JWT protège l'accès aux ressources
+critiques de l'API, tandis que RBAC garantit qu'un utilisateur n'accède qu'aux opérations
+compatibles avec son rôle métier. Les mots de passe sont hachés via bcrypt. Les logs
+des actions sensibles sont enregistrés pour l'auditabilité et l'investigation en cas
+d'incident.
 
 \chapter{Sécurité, fiabilité et qualité}
-\section{Mécanismes de sécurité}
-La sécurité de StageFlow est traitée comme une exigence transversale, intégrée à tous
-les niveaux de l’application. L’authentification par JWT protège les accès aux ressources
-API, tandis que l’autorisation RBAC garantit qu’un utilisateur n’accède qu’aux opérations
-compatibles avec son rôle métier. Cette combinaison réduit le risque d’exposition involon-
-taire de données sensibles.
 
-En complément, la validation côté serveur (Joi) bloque les entrées invalides ou malveil-
-lantes avant leur traitement. Les mécanismes de journalisation permettent de tracer les
-actions sensibles, de faciliter l’investigation en cas d’incident et de renforcer l’auditabilité
-du système. Enfin, la gestion centralisée des erreurs limite les fuites d’information technique
-dans les réponses renvoyées au client.
+\section{Mécanismes de sécurité}
+
+La sécurité de StageFlow est traitée comme une exigence transversale, intégrée à tous
+les niveaux de l'application. L'authentification par JWT protège les accès aux ressources
+API, tandis que l'autorisation RBAC garantit qu'un utilisateur n'accède qu'aux opérations
+compatibles avec son rôle métier. Cette combinaison réduit significativement le risque
+d'exposition involontaire de données sensibles.
+
+En complément, la validation côté serveur (Joi) bloque les entrées invalides ou malveillantes
+avant leur traitement. Les mécanismes de journalisation (logging) enregistrent les actions
+sensibles, facilitant l'investigation en cas d'incident et renforçant l'auditabilité du
+système. La gestion centralisée des erreurs limite les fuites d'information technique
+dans les réponses renvoyées au client, prévenant l'exposition involontaire de détails
+d'implémentation.
 
 \section{Qualité et robustesse}
-La qualité de la plateforme repose sur la cohérence des workflows métier, la stabilité des
-composants techniques et la vérification continue du comportement applicatif. Les tests
- fonctionnels par rôle permettent de valider les scénarios critiques de bout en
- bout : création et gestion des stages, suivi des tâches et validation des rapports.
+
+La qualité de la plateforme repose sur la cohérence des workflows métier, la stabilité
+des composants techniques et la vérification continue du comportement applicatif. Les
+tests fonctionnels par rôle permettent de valider les scénarios critiques de bout en bout :
+création et gestion des stages, création des comptes étudiants, assignation et suivi des
+tâches, suivi de l'avancement et validation des rapports.
 
 La robustesse est renforcée par une structuration claire du code (routes, contrôleurs,
-middlewares, validations), une gestion explicite des erreurs et une modélisation relationnelle
-cohérente dans PostgreSQL. Des revues régulières des dépendances et des configurations
-de sécurité contribuent à limiter la dette technique et à maintenir un niveau de fiabilité
-compatible avec un usage réel en environnement académique et professionnel.
+middlewares, validations), une gestion explicite et documenti des erreurs, et une
+modélisation relationnelle cohérente dans PostgreSQL. Des revues régulières des
+dépendances et des configurations de sécurité contribuent à limiter la dette technique
+et à maintenir un niveau de fiabilité compatible avec un usage réel en environnement
+académique et professionnel.
 
 \chapter{Interfaces utilisateur et illustrations}
-Les interfaces principales de StageFlow sont structurées autour de l’authentification, des
-tableaux de bord par rôle, de la gestion des stages et des comptes étudiants, du suivi des
-tâches et du cycle de validation des rapports. Les illustrations insérées dans les chapitres
-précédents documentent les points clés du parcours utilisateur et de la modélisation
-technique.
+
+Les interfaces principales de StageFlow sont structurées autour de l'authentification
+sécurisée, des tableaux de bord adaptés à chaque rôle, de la gestion des stages et des
+comptes étudiants, du suivi des tâches avec historique des statuts, et du cycle de
+validation des rapports. Les illustrations présentées dans les chapitres précédents
+documentent les points clés de la modélisation métier, des parcours utilisateurs et de
+l'architecture technique.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/UseCase1.PNG}
-  \caption{Figure 2.1 :: Diagramme de cas d’utilisation de la plateforme StageFlow}
+  \includegraphics[width=0.9\textwidth]{screen/use case!UseCaseDiagram1_1.jpg}
+  \caption{Figure 4.2 :: Diagramme de cas d'utilisation : trois rôles et interactions}
   \label{fig:usecase}
 \end{figure}
 
