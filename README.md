@@ -72,11 +72,8 @@
 
 | Role | Description | Key Responsibilities |
 |------|-------------|----------------------|
-| **Student** | Internship candidate | Apply to positions, complete tasks, submit reports, track progress |
-| **Supervisor** | Internship manager | Manage interns, assign tasks, provide feedback, track performance |
-| **Company HR** | Company administrator | Manage company info, post internships, oversee supervisors |
-| **Admin** | System administrator | Manage all users, enforce policies, generate system reports |
-| **Super Admin** | Root administrator | Full system access, platform configuration, auditing |
+
+
 
 ### User Journey by Role
 
@@ -100,12 +97,7 @@
 6. **Evaluate** → Provide feedback, rate student work
 7. **Report** → Generate and export performance reports
 
-#### 🏛️ Admin User Journey
-1. **Login** → Access admin dashboard
-2. **Monitor** → View all users, applications, and internships
-3. **Manage** → Create/deactivate accounts, assign roles
-4. **Review** → Monitor system health and compliance
-5. **Report** → Generate audit logs and usage reports
+
 
 ---
 
