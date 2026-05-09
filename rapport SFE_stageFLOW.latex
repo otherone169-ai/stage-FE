@@ -5,8 +5,12 @@
 \usepackage[T1]{fontenc}
 \usepackage[french]{babel}
 \usepackage{graphicx}
+\graphicspath{{screen/}}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
+
+% Numérotation des chapitres en chiffres romains
+\renewcommand{\thechapter}{\Roman{chapter}}
 
 \begin{document}
 
@@ -38,9 +42,11 @@ et d'encadrement des stagiaires\\
 \end{titlepage}
 
 \tableofcontents
+\listoffigures
 \clearpage
 
 \chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
 Je tiens à exprimer ma profonde gratitude à mon encadrant, Neuman Charhbili, pour son
 accompagnement rigoureux, ses orientations méthodologiques et sa disponibilité constante
 tout au long de ce projet de fin d'études.
@@ -52,6 +58,7 @@ leur patience et leur encouragement durant toute la durée de ce travail.
 
 \clearpage
 \chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
 StageFlow est une plateforme interne de gestion et de suivi des stagiaires conçue pour
 structurer et automatiser le processus d'encadrement académique et professionnel au
 sein d'une institution. La plateforme centralise l'ensemble du cycle de vie du stage :
@@ -73,7 +80,8 @@ assurer la traçabilité complète et l'auditabilité des décisions.
     Mots-clés : gestion interne des stagiaires, plateforme d'encadrement, trois rôles,
 architecture MVC, JWT, RBAC, React, Node.js, PostgreSQL, supervision académique.
 
-\chapter{Introduction générale}
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
 La gestion des stagiaires au sein d'une institution ou d'une structure d'accueil requiert
 une coordination rigoureuse entre plusieurs acteurs : superviseurs de stage, administrateurs
 et étudiants. Lorsque ces activités demeurent fragmentées (courriels, feuilles de calcul,
@@ -98,6 +106,108 @@ Ce rapport présente successivement la vision du projet, l'analyse fonctionnelle
 les parcours utilisateurs critiques, l'architecture technique MVC retenue, puis les
 dispositifs de sécurité, fiabilité et qualité implémentés pour garantir la robustesse et
 l'auditabilité de l'application.
+
+\chapter{Présentation de l'organisme d'accueil}
+
+\section{Présentation générale}
+L'organisme d'accueil présenté dans ce rapport est Vala (également mentionné localement
+comme "Vala Bleu"). Fondée en 2007, la société a son siège social à Agadir (région
+Souss-Massa) et dispose d'une présence commerciale à l'international, notamment à
+Londres (Royaume-Uni). Vala s'est spécialisée dans les services d'hébergement web et
+d'enregistrement de noms de domaine, et opère principalement sur les marchés européen,
+américain et nord-africain.
+
+Les valeurs professionnelles qui guident l'entreprise sont les suivantes :
+\begin{itemize}
+  \item Confiance, engagement et transparence;
+  \item Sérieux, performance et proactivité;
+  \item Continuité, disponibilité et qualité de service.
+\end{itemize}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.25\textwidth]{screen/valaLogo.png}
+  \caption{Logo de l'organisme d'accueil}
+  \label{fig:logo}
+\end{figure}
+
+\section{Pourquoi Vala ?}
+Vala place la satisfaction client au cœur de sa stratégie. L'entreprise propose des
+solutions d'hébergement et des services cloud conçus pour garantir la continuité des
+activités en ligne de ses clients. Son infrastructure est pensée pour offrir fiabilité,
+simplicité d'usage et compétitivité économique, avec un support technique assuré 24h/24
+et 7j/7 par une équipe d'experts. La qualité, la fiabilité et l'attention au détail constituent
+les priorités opérationnelles de Vala.
+
+\section{Services proposés}
+Parmi les services proposés figurent :
+\begin{itemize}
+  \item Hébergement web à haute performance;
+  \item Serveurs rapides et sécurisés;
+  \item Messagerie professionnelle;
+  \item Solutions de création de sites sans codage;
+  \item Développement de sites e-commerce évolutifs;
+  \item Migration gratuite de services;
+  \item Sécurité avancée des infrastructures;
+  \item Choix de data centers proches des clients cibles.
+\end{itemize}
+
+\section{Carrière et ressources humaines}
+Vala favorise l'apprentissage continu et le développement professionnel. L'entreprise
+offre des opportunités d'évolution dans un environnement dynamique et technologique.
+Elle recrute des profils motivés, capables de s'adapter rapidement à des contraintes
+techniques et organisationnelles.
+
+\subsection{Fiche de la société}
+\begin{table}[ht]
+\centering
+\begin{tabular}{|p{0.4\textwidth}|p{0.5\textwidth}|}
+\hline
+\textbf{Date de création} & 30/09/2020 \\
+\hline
+\textbf{Nom de la société} & Creative Internet Solutions \\
+\hline
+\textbf{Forme juridique} & S.A.R.L \\
+\hline
+\textbf{Activités} & Hébergement et création de site web \\
+\hline
+\textbf{Secteur} & Production digitale \\
+\hline
+\textbf{Adresse} & Immeuble Safwa, Boulevard Hassan 1er, 2e étage N°6, Dakhla – Agadir 80000, Maroc \\
+\hline
+\textbf{Téléphone} & 00 212 528 21 3045 / 00 212 528 22 5522 \\
+\hline
+\textbf{Effectif} & 11 \\
+\hline
+\textbf{Directeur général} & M. Kayouh Abdelbast \\
+\hline
+\end{tabular}
+\caption{Fiche d'information de la société Vala}
+\label{tab:fiche-societe}
+\end{table}
+
+\section{Organigramme de l'entreprise}
+Les responsabilités clés communiquées sont les suivantes :
+\begin{itemize}
+  \item Directeur Général : M. Abdelbast Kayouh;
+  \item Directeur Projet Web : M. Khalid Jbour;
+  \item Responsable Commercial : M. Abdelbast Kayouh;
+  \item Attachée à la Direction : Mme Asma El Boudi;
+  \item Service Comptabilité et Gestion des RH : Mme Asma El Boudi;
+  \item Service Après-Vente : Mme Wafa Fouks;
+  \item Développeur : M. Neuman Charhbili;
+  \item Responsable Service Clientèle : Mme Hanane Bayen;
+  \item Développeur : M. Bachir El Omari;
+  \item Gestion de la Relation Client : Mme Karima Chaoui;
+  \item Service du Personnel : Mme Soukaina Ouahmid, Mme Fatiha Disky.
+\end{itemize}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/organigrameOrganisation.PNG}
+  \caption{Organigramme et fonctions clés}
+  \label{fig:organigramme}
+\end{figure}
 
 \chapter{Présentation du projet}
 
@@ -321,14 +431,14 @@ stage.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.jpg}
-  \caption{Figure 3.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
+  \caption{Figure IV.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
   \label{fig:seq-compte}
 \end{figure}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/diagramactivitesuravancementetsuivi.jpg}
-  \caption{Figure 3.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
+  \caption{Figure IV.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
   \label{fig:activite-suivi}
 \end{figure}
 
@@ -356,7 +466,7 @@ historisation des actions critiques.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
-  \caption{Figure 4.1 :: Diagramme de classes UML : entités principales et relations}
+  \caption{Figure V.1 :: Diagramme de classes UML : entités principales et relations}
   \label{fig:uml-classes}
 \end{figure}
 
@@ -390,15 +500,27 @@ compatibles avec son rôle métier. Les mots de passe sont hachés via bcrypt. L
 des actions sensibles sont enregistrés pour l'auditabilité et l'investigation en cas
 d'incident.
 
-% Chapter 'Sécurité, fiabilité et qualité' moved into Chapter 7 as a section per request
+\section{Fiabilité et qualité}
+
+La qualité de la plateforme repose sur la cohérence des workflows métier, la stabilité
+des composants techniques et la vérification continue du comportement applicatif. Les
+tests fonctionnels par rôle permettent de valider les scénarios critiques de bout en bout :
+création et gestion des stages, création des comptes étudiants, assignation et suivi des
+tâches, suivi de l'avancement et validation des rapports.
+
+La robustesse est renforcée par une structuration claire du code (routes, contrôleurs,
+middlewares, validations), une gestion explicite et documentée des erreurs, et une
+modélisation relationnelle cohérente dans PostgreSQL. Des revues régulières des
+dépendances et des configurations de sécurité contribuent à limiter la dette technique
+et à maintenir un niveau de fiabilité compatible avec un usage réel en environnement
+académique et professionnel.
 
 \chapter{Interfaces utilisateur et captures d'écran}
 
-Le Chapitre 7 « Interfaces utilisateur et illustrations » devient un chapitre
-entièrement dédié aux captures d'écran de l'application StageFlow. Ce chapitre ne
-contiendra que les interfaces les plus importantes et représentatives du
-fonctionnement réel de la plateforme, afin d'illustrer concrètement les
-fonctionnalités principales implémentées.
+Ce chapitre est entièrement dédié aux captures d'écran de l'application StageFlow.
+Il contient les interfaces les plus importantes et représentatives du fonctionnement
+réel de la plateforme, afin d'illustrer concrètement les fonctionnalités principales
+implémentées.
 
 Sélectionner uniquement les captures pertinentes : authentification, tableau de bord
 administrateur, gestion des stagiaires, création de stage, gestion des tâches, suivi
@@ -417,7 +539,7 @@ Les images seront insérées ci-dessous lorsque vous les fournirez. Pour l'insta
 chaque section contient une zone réservée (placeholder) indiquant l'image attendue
 et laissant la place pour l'insertions ultérieure.
 
-\section{7.1 Authentification — Écran de connexion}
+\section{Authentification — Écran de connexion}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : authentification (écran de connexion)}}
@@ -433,38 +555,7 @@ redirections selon le rôle.
 Point d'entrée sécurisé de la plateforme; contrôle l'accès aux ressources en appliquant
 le RBAC et initialise le contexte utilisateur pour les parcours suivants.
 
-\section{7.10 Sécurité, fiabilité et qualité}
-\subsection{Mécanismes de sécurité}
-
-La sécurité de StageFlow est traitée comme une exigence transversale, intégrée à tous
-les niveaux de l'application. L'authentification par JWT protège les accès aux ressources
-API, tandis que l'autorisation RBAC garantit qu'un utilisateur n'accède qu'aux opérations
-compatibles avec son rôle métier. Cette combinaison réduit significativement le risque
-d'exposition involontaire de données sensibles.
-
-En complément, la validation côté serveur (Joi) bloque les entrées invalides ou malveillantes
-avant leur traitement. Les mécanismes de journalisation (logging) enregistrent les actions
-sensibles, facilitant l'investigation en cas d'incident et renforçant l'auditabilité du
-système. La gestion centralisée des erreurs limite les fuites d'information technique
-dans les réponses renvoyées au client, prévenant l'exposition involontaire de détails
-d'implémentation.
-
-\subsection{Qualité et robustesse}
-
-La qualité de la plateforme repose sur la cohérence des workflows métier, la stabilité
-des composants techniques et la vérification continue du comportement applicatif. Les
-tests fonctionnels par rôle permettent de valider les scénarios critiques de bout en bout :
-création et gestion des stages, création des comptes étudiants, assignation et suivi des
-tâches, suivi de l'avancement et validation des rapports.
-
-La robustesse est renforcée par une structuration claire du code (routes, contrôleurs,
-middlewares, validations), une gestion explicite et documentée des erreurs, et une
-modélisation relationnelle cohérente dans PostgreSQL. Des revues régulières des
-dépendances et des configurations de sécurité contribuent à limiter la dette technique
-et à maintenir un niveau de fiabilité compatible avec un usage réel en environnement
-académique et professionnel.
-
-\section{7.2 Tableau de bord administrateur}
+\section{Tableau de bord administrateur}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : tableau de bord administrateur}}
@@ -479,7 +570,7 @@ alertes et accès rapides aux fonctions d'administration.
 Permet à l'administrateur de superviser l'état global du système, gérer les comptes
 et intervenir en cas d'incident ou d'anomalie.
 
-\section{7.3 Gestion des stagiaires}
+\section{Gestion des stagiaires}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des stagiaires}}
@@ -494,7 +585,7 @@ et l'affectation aux stages.
 Outil central pour le superviseur : associer un étudiant à un stage, suivre ses
 informations et historique administratif.
 
-\section{7.4 Création de stage}
+\section{Création de stage}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : création de stage}}
@@ -509,7 +600,7 @@ et superviseur référent.
 Permet d'enregistrer l'entité stage qui servira de conteneur aux tâches, au suivi
 et à la production du rapport final.
 
-\section{7.5 Gestion des tâches}
+\section{Gestion des tâches}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des tâches}}
@@ -524,7 +615,7 @@ remise de livrables pour chaque tâche.
 Outil opérationnel pour découper la mission en tâches, suivre l'avancement et
 consigner les retours de l'encadrement.
 
-\section{7.6 Suivi de progression}
+\section{Suivi de progression}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : suivi de progression}}
@@ -539,7 +630,7 @@ et tendances temporelles.
 Permet d'évaluer l'avancement global du stagiaire et d'anticiper les actions de
 remédiation si nécessaire.
 
-\section{7.7 Espace étudiant}
+\section{Espace étudiant}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : espace étudiant}}
@@ -554,7 +645,7 @@ accès au formulaire de rédaction/soumission du rapport.
 Interface principale de l'étudiant pour exécuter le travail, soumettre des livrables
 et consulter les retours du superviseur.
 
-\section{7.8 Gestion des rapports}
+\section{Gestion des rapports}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : gestion des rapports}}
@@ -568,7 +659,7 @@ versions et commentaires du superviseur.
 \paragraph{Rôle dans le workflow}
 Conclut le cycle pédagogique : réception, revue et validation formelle du rapport.
 
-\section{7.9 Workflow d'encadrement (vue synthétique)}
+\section{Workflow d'encadrement (vue synthétique)}
 \begin{figure}[ht]
   \centering
   \fbox{\parbox[b][4cm][c]{0.9\textwidth}{Image à fournir : workflow d'encadrement — synthèse}}
@@ -588,7 +679,7 @@ Ce chapitre présente les principaux outils et technologies employés dans le
 développement de StageFlow. Chaque section est centrée sur une description technique
 de l'outil, accompagnée d'une illustration représentative issue du dossier \texttt{screen/}.
 
-\section{8.1 Git et GitHub}
+\section{Git et GitHub}
 
 \begin{figure}[ht]
   \centering
@@ -604,7 +695,7 @@ complet du code source, de gérer des branches et de fusionner des modifications
 fiable. GitHub est une plateforme d'hébergement de dépôts Git qui facilite la collaboration,
 la revue de code et la conservation centralisée des versions du projet.
 
-\section{8.2 Node.js}
+\section{Node.js}
 
 \begin{figure}[ht]
   \centering
@@ -619,7 +710,7 @@ Node.js est un environnement d'exécution JavaScript côté serveur basé sur le
 Il repose sur un modèle événementiel non bloquant, adapté aux applications web nécessitant
 de nombreuses opérations I/O asynchrones.
 
-\section{8.3 Express.js}
+\section{Express.js}
 
 \begin{figure}[ht]
   \centering
@@ -634,7 +725,7 @@ Express.js est un framework web léger pour Node.js qui fournit un système de r
 des middlewares réutilisables et une structure simple pour construire des API REST.
 Il simplifie le traitement des requêtes HTTP et l'organisation des points d'accès backend.
 
-\section{8.4 PostgreSQL}
+\section{PostgreSQL}
 
 \begin{figure}[ht]
   \centering
@@ -649,7 +740,7 @@ PostgreSQL est un système de gestion de base de données relationnelle open-sou
 connu pour sa robustesse, sa conformité au standard SQL et ses capacités transactionnelles.
 Il assure une persistance cohérente des données et un bon niveau d'intégrité référentielle.
 
-\section{8.5 Docker}
+\section{Docker}
 
 \begin{figure}[ht]
   \centering
@@ -664,7 +755,7 @@ Docker est une plateforme de conteneurisation qui encapsule une application et s
 dépendances dans des conteneurs isolés. Elle permet d'obtenir des environnements
 reproductibles entre le développement, les tests et le déploiement.
 
-\section{8.6 JWT (JSON Web Token)}
+\section{JWT (JSON Web Token)}
 
 \begin{figure}[ht]
   \centering
@@ -682,6 +773,7 @@ l'authentification stateless dans les applications web modernes.
 \clearpage
 
 \chapter*{Conclusion générale et perspectives}
+\addcontentsline{toc}{chapter}{Conclusion générale et perspectives}
 
 Le projet StageFlow constitue une contribution concrète à la digitalisation du suivi et de
 l'encadrement des stagiaires au sein des structures académiques et professionnelles. À travers
@@ -754,7 +846,7 @@ traçabilité et de qualité logicielle dans le développement des applications 
 
 \clearpage
 
-\chapter*{Bibliographie}
+
 
 \begin{thebibliography}{99}
 

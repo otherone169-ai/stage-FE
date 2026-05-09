@@ -1,0 +1,29 @@
+\babel@toc {french}{}\relax 
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {I.1}{\ignorespaces Logo de l'organisme d'accueil}}{7}{}%
+\contentsline {figure}{\numberline {I.2}{\ignorespaces Organigramme et fonctions clés}}{9}{}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {III.1}{\ignorespaces Diagramme des cas d'utilisation : interactions entre Administrateur, Superviseur et Étudiant}}{14}{}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {IV.1}{\ignorespaces Figure IV.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}}{16}{}%
+\contentsline {figure}{\numberline {IV.2}{\ignorespaces Figure IV.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}}{17}{}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {V.1}{\ignorespaces Figure V.1 :: Diagramme de classes UML : entités principales et relations}}{18}{}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {VI.1}{\ignorespaces Authentification — Écran de connexion (image fournie ultérieurement)}}{20}{}%
+\contentsline {figure}{\numberline {VI.2}{\ignorespaces Tableau de bord Administrateur (image fournie ultérieurement)}}{21}{}%
+\contentsline {figure}{\numberline {VI.3}{\ignorespaces Gestion des stagiaires — liste et fiche (image fournie ultérieurement)}}{21}{}%
+\contentsline {figure}{\numberline {VI.4}{\ignorespaces Création de stage — formulaire de saisie (image fournie ultérieurement)}}{22}{}%
+\contentsline {figure}{\numberline {VI.5}{\ignorespaces Gestion des tâches — création et suivi (image fournie ultérieurement)}}{22}{}%
+\contentsline {figure}{\numberline {VI.6}{\ignorespaces Suivi de progression — indicateurs et timeline (image fournie ultérieurement)}}{22}{}%
+\contentsline {figure}{\numberline {VI.7}{\ignorespaces Espace étudiant — tableau personnel et soumission de livrables (image fournie ultérieurement)}}{23}{}%
+\contentsline {figure}{\numberline {VI.8}{\ignorespaces Gestion des rapports — soumission et workflow de revue (image fournie ultérieurement)}}{23}{}%
+\contentsline {figure}{\numberline {VI.9}{\ignorespaces Workflow d'encadrement — synthèse des interactions (image fournie ultérieurement)}}{24}{}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {VII.1}{\ignorespaces Git et GitHub — contrôle de version distribué}}{25}{}%
+\contentsline {figure}{\numberline {VII.2}{\ignorespaces Node.js — runtime JavaScript côté serveur}}{25}{}%
+\contentsline {figure}{\numberline {VII.3}{\ignorespaces Express.js — framework web minimaliste}}{26}{}%
+\contentsline {figure}{\numberline {VII.4}{\ignorespaces PostgreSQL — système de gestion de base de données relationnelle}}{26}{}%
+\contentsline {figure}{\numberline {VII.5}{\ignorespaces Docker — conteneurisation et portabilité}}{26}{}%
+\contentsline {figure}{\numberline {VII.6}{\ignorespaces JWT — authentification par jeton stateless}}{27}{}%
