@@ -116,7 +116,7 @@ const AdminApplicationsPage = () => {
                   </td>
                   <td>
                     <strong>{row.company_name || "-"}</strong>
-                    <div>{row.company_email}</div>
+                    <div>{row.supervisor_email}</div>
                   </td>
                   <td>{row.status}</td>
                   <td>{formatDate(row.applied_at)}</td>

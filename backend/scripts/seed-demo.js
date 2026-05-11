@@ -118,11 +118,12 @@ const insertDemoData = async (client, ids) => {
   };
 
   const student1 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student1,
+      supervisors.alphaEng,
       "Amine Idrissi",
       "0611000001",
       "Master Genie Logiciel",
@@ -134,11 +135,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student2 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student2,
+      supervisors.alphaEng,
       "Salma Berrada",
       "0611000002",
       "Licence Informatique",
@@ -150,11 +152,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student3 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student3,
+      supervisors.alphaData,
       "Imane Trabelsi",
       "0611000003",
       "Master Data Science",
@@ -166,11 +169,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student4 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student4,
+      supervisors.alphaData,
       "Karim Alaoui",
       "0611000004",
       "Master Cloud & DevOps",
@@ -182,11 +186,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student5 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student5,
+      supervisors.demo,
       "Omar El Kettani",
       "0611000005",
       "Master en Cybersécurité",
@@ -198,11 +203,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student6 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student6,
+      supervisors.demo,
       "Fatima Zahra",
       "0611000006",
       "Licence Marketing Digital",
@@ -214,11 +220,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student7 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student7,
+      supervisors.betaQa,
       "Yassine Amrani",
       "0611000007",
       "Master UX/UI Design",
@@ -230,11 +237,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student8 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student8,
+      supervisors.betaQa,
       "Khadija Mansouri",
       "0611000008",
       "Ingénieur en Télécommunications",
@@ -246,11 +254,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student9 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student9,
+      supervisors.alphaEng,
       "Adam Benjelloun",
       "0611000009",
       "Master Intelligence Artificielle",
@@ -262,11 +271,12 @@ const insertDemoData = async (client, ids) => {
   );
 
   const student10 = await client.query(
-    `INSERT INTO students (user_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)
+    `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, preferences, cv_url, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, true)
      RETURNING id`,
     [
       ids.student10,
+      supervisors.demo,
       "Mariam El Idrissi",
       "0611000010",
       "Master Business Intelligence",

@@ -43,20 +43,36 @@ const run = async () => {
       [companyEmail, companyPwd]
     );
 
-    const student = await client.query(
-      `INSERT INTO students (user_id, full_name, phone, education, skills, experience, profile_completed)
-       VALUES ($1, 'Demo Student', '0600000000', 'Computer Science', 'react,node,postgresql', '1 year projects', true)
-       ON CONFLICT (user_id) DO UPDATE SET full_name = EXCLUDED.full_name
-       RETURNING id`,
-      [studentUser.rows[0].id]
-    );
-
     const company = await client.query(
       `INSERT INTO companies (user_id, name, description, location, website)
        VALUES ($1, 'Demo Company', 'Internship-focused company', 'Casablanca', 'https://demo-company.local')
        ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name
        RETURNING id`,
       [companyUser.rows[0].id]
+    );
+
+    const supervisorUser = await client.query(
+      `INSERT INTO users (email, password_hash, role, is_active)
+       VALUES ($1, $2, 'supervisor', true)
+       ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+       RETURNING id`,
+      ['supervisor@platform.local', await bcrypt.hash('Supervisor123!', 10)]
+    );
+
+    const supervisor = await client.query(
+      `INSERT INTO supervisors (user_id, company_id, full_name, position)
+       VALUES ($1, $2, 'Demo Supervisor', 'Project Manager')
+       ON CONFLICT (user_id) DO UPDATE SET company_id = EXCLUDED.company_id
+       RETURNING id`,
+      [supervisorUser.rows[0].id, company.rows[0].id]
+    );
+
+    const student = await client.query(
+      `INSERT INTO students (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, profile_completed)
+       VALUES ($1, $2, 'Demo Student', '0600000000', 'Computer Science', 'react,node,postgresql', '1 year projects', true)
+       ON CONFLICT (user_id) DO UPDATE SET full_name = EXCLUDED.full_name, created_by_supervisor_id = EXCLUDED.created_by_supervisor_id
+       RETURNING id`,
+      [studentUser.rows[0].id, supervisor.rows[0].id]
     );
 
     const internship = await client.query(

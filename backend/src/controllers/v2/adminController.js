@@ -53,29 +53,18 @@ export const listCompanyRhProfiles = async (req, res, next) => {
   try {
     const result = await query(
       `SELECT
-         u.id AS user_id,
-         u.email,
-         u.is_active,
-         u.created_at,
-         c.id AS company_id,
-         c.name AS company_name,
-         c.description AS company_description,
-         c.location AS company_location,
-         c.website AS company_website,
-         (
-           SELECT COUNT(*)::int
-           FROM internships i
-           WHERE i.company_id = c.id
-         ) AS internships_count,
-         (
-           SELECT COUNT(*)::int
-           FROM supervisors s
-           WHERE s.company_id = c.id
-         ) AS supervisors_count
-       FROM users u
-       LEFT JOIN companies c ON c.user_id = u.id
-       WHERE u.role = 'company'
-       ORDER BY c.name ASC NULLS LAST, u.created_at DESC`
+         company_name,
+         MAX(company_description) AS company_description,
+         MAX(company_location) AS company_location,
+         MAX(company_website) AS company_website,
+         COUNT(*)::int AS supervisors_count,
+         COUNT(DISTINCT i.id)::int AS internships_count,
+         COUNT(DISTINCT p.id)::int AS projects_count
+       FROM supervisors s
+       LEFT JOIN internships i ON i.supervisor_id = s.id
+       LEFT JOIN projects p ON p.supervisor_id = s.id
+       GROUP BY company_name
+       ORDER BY company_name ASC`
     );
 
     return res.json(result.rows);
@@ -101,6 +90,8 @@ export const listStudentProfiles = async (req, res, next) => {
          s.preferences,
          s.cv_url,
          s.profile_completed,
+         sup.full_name AS created_by_supervisor_name,
+         sup.company_name,
          (
            SELECT COUNT(*)::int
            FROM applications a
@@ -113,6 +104,7 @@ export const listStudentProfiles = async (req, res, next) => {
          ) AS accepted_applications_count
        FROM users u
        LEFT JOIN students s ON s.user_id = u.id
+       LEFT JOIN supervisors sup ON sup.id = s.created_by_supervisor_id
        WHERE u.role = 'student'
        ORDER BY s.full_name ASC NULLS LAST, u.created_at DESC`
     );
@@ -163,10 +155,8 @@ export const listSupervisors = async (req, res, next) => {
 export const getUsersDistribution = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT 
-         role,
-         COUNT(*) as count
-       FROM users 
+      `SELECT role, COUNT(*)::int AS count
+       FROM users
        WHERE is_active = true
        GROUP BY role`
     );
@@ -177,10 +167,10 @@ export const getUsersDistribution = async (req, res, next) => {
       admins: 0
     };
 
-    result.rows.forEach(row => {
-      if (row.role === 'student') distribution.students = parseInt(row.count);
-      if (row.role === 'supervisor') distribution.supervisors = parseInt(row.count);
-      if (row.role === 'admin') distribution.admins = parseInt(row.count);
+    result.rows.forEach((row) => {
+      if (row.role === "student") distribution.students = row.count;
+      if (row.role === "supervisor") distribution.supervisors = row.count;
+      if (row.role === "admin") distribution.admins = row.count;
     });
 
     return res.json(distribution);
@@ -192,20 +182,18 @@ export const getUsersDistribution = async (req, res, next) => {
 export const getInternshipStatusDistribution = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT 
-         COUNT(CASE WHEN i.moderation_status = 'pending' THEN 1 END) as pending,
-         COUNT(CASE WHEN i.moderation_status = 'approved' AND i.is_active = true THEN 1 END) as active,
-         COUNT(CASE WHEN i.moderation_status = 'approved' AND i.is_active = false THEN 1 END) as completed
-       FROM internships i`
+      `SELECT
+         COUNT(CASE WHEN moderation_status = 'pending' THEN 1 END)::int AS pending,
+         COUNT(CASE WHEN moderation_status = 'approved' AND is_active = true THEN 1 END)::int AS active,
+         COUNT(CASE WHEN moderation_status = 'approved' AND is_active = false THEN 1 END)::int AS completed
+       FROM internships`
     );
 
-    const distribution = {
-      pending: parseInt(result.rows[0]?.pending || 0),
-      active: parseInt(result.rows[0]?.active || 0),
-      completed: parseInt(result.rows[0]?.completed || 0)
-    };
-
-    return res.json(distribution);
+    return res.json({
+      pending: result.rows[0]?.pending || 0,
+      active: result.rows[0]?.active || 0,
+      completed: result.rows[0]?.completed || 0
+    });
   } catch (error) {
     return next(error);
   }
@@ -218,6 +206,8 @@ export const listApplications = async (req, res, next) => {
          a.id AS application_id,
          a.status,
          a.applied_at,
+         a.reviewed_at,
+         a.reviewer_notes,
          s.id AS student_id,
          s.full_name,
          s.profile_completed,
@@ -225,28 +215,28 @@ export const listApplications = async (req, res, next) => {
          i.id AS internship_id,
          i.title AS internship_title,
          i.is_active AS internship_is_active,
-         c.id AS company_id,
-         c.name AS company_name,
-         company_user.email AS company_email,
+         sup.id AS supervisor_id,
+         sup.company_name,
+         sup.full_name AS supervisor_name,
+         supervisor_user.email AS supervisor_email,
          latest_project.id AS project_id,
          latest_intern.id AS intern_id,
-         latest_intern.status AS intern_status,
-         supervisor.full_name AS supervisor_name
+         latest_intern.status AS intern_status
        FROM applications a
        JOIN students s ON s.id = a.student_id
        JOIN users student_user ON student_user.id = s.user_id
        JOIN internships i ON i.id = a.internship_id
-       JOIN companies c ON c.id = i.company_id
-       JOIN users company_user ON company_user.id = c.user_id
+       JOIN supervisors sup ON sup.id = i.supervisor_id
+       JOIN users supervisor_user ON supervisor_user.id = sup.user_id
        LEFT JOIN LATERAL (
-         SELECT p.id, p.supervisor_id
+         SELECT p.id
          FROM projects p
          WHERE p.internship_id = i.id
          ORDER BY p.created_at DESC
          LIMIT 1
        ) latest_project ON TRUE
        LEFT JOIN LATERAL (
-         SELECT inr.id, inr.supervisor_id, inr.status
+         SELECT inr.id, inr.status
          FROM interns inr
          WHERE inr.student_id = s.id
            AND latest_project.id IS NOT NULL
@@ -254,8 +244,6 @@ export const listApplications = async (req, res, next) => {
          ORDER BY inr.created_at DESC
          LIMIT 1
        ) latest_intern ON TRUE
-       LEFT JOIN supervisors supervisor
-         ON supervisor.id = COALESCE(latest_intern.supervisor_id, latest_project.supervisor_id)
        ORDER BY a.applied_at DESC, a.id DESC`
     );
 

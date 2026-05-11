@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import pool, { query } from "../../config/db.js";
 import { sendMail } from "../../utils/mailer.js";
 
-const toSafeNumber = (value) => {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+const getSupervisor = async (userId) => {
+  const supervisor = await query("SELECT * FROM supervisors WHERE user_id = $1", [userId]);
+  return supervisor.rows[0] || null;
 };
 
 const computeDurationWeeks = (startDate, endDate) => {
@@ -13,15 +13,11 @@ const computeDurationWeeks = (startDate, endDate) => {
 
   const start = new Date(startDate);
   const end = new Date(endDate);
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
     return null;
   }
 
-  const diffMs = end.getTime() - start.getTime();
-  if (diffMs <= 0) return null;
-
-  return Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000));
+  return Math.ceil((end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
 };
 
 const getAppBaseUrl = () => process.env.APP_PUBLIC_URL || process.env.FRONTEND_URL || "http://localhost:5173";
@@ -46,86 +42,66 @@ const sendPasswordSetupMail = async (email, rawToken) => {
 
   await sendMail({
     to: email,
-    subject: "Definir votre mot de passe - StageFlow",
-    text: `Votre compte stagiaire est pret. Definissez votre mot de passe ici: ${resetUrl}`,
-    html: `<p>Votre compte stagiaire est pret.</p><p>Cliquez ici pour definir votre mot de passe:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Ce lien expire dans 30 minutes.</p>`
+    subject: "Set your StageFlow password",
+    text: `Your intern account is ready. Set your password here: ${resetUrl}`,
+    html: `<p>Your intern account is ready.</p><p>Set your password here:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 30 minutes.</p>`
   });
 };
 
 const buildProjectNotificationText = (projectTitle, projectDescription, taskTitles) => {
-  const taskSection = taskTitles.length > 0 ? taskTitles.map((task) => `- ${task}`).join("\n") : "- Aucune tache encore associee";
-
-  return [
-    `Votre projet StageFlow est pret: ${projectTitle}`,
+  const lines = [
+    `Your StageFlow project is ready: ${projectTitle}`,
     projectDescription ? `Description: ${projectDescription}` : null,
-    "Taches associees:",
-    taskSection
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+    taskTitles.length > 0 ? "Tasks:" : null,
+    taskTitles.length > 0 ? taskTitles.map((task, index) => `${index + 1}. ${task}`).join("\n") : null
+  ].filter(Boolean);
+
+  return lines.join("\n\n");
 };
 
-const buildProjectNotificationHtml = (projectTitle, projectDescription, taskTitles) => {
-  const tasksMarkup =
-    taskTitles.length > 0
-      ? `<ul>${taskTitles.map((task) => `<li>${task}</li>`).join("")}</ul>`
-      : "<p>Aucune tache encore associee.</p>";
-
-  return `
-    <p>Votre projet StageFlow est pret: <strong>${projectTitle}</strong></p>
-    ${projectDescription ? `<p><strong>Description:</strong> ${projectDescription}</p>` : ""}
-    <p><strong>Taches associees:</strong></p>
-    ${tasksMarkup}
-  `;
-};
-
-// Get internships for a supervisor
 export const getSupervisorInternships = async (req, res, next) => {
   try {
-    const { id: supervisorId } = req.user;
-    const supervisor = await query(
-      `SELECT id FROM supervisors WHERE user_id = $1`,
-      [supervisorId]
-    );
-
-    if (!supervisor.rows.length) {
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
     const internships = await query(
-      `SELECT 
-        i.id, i.title, i.description, i.location, 
-        i.domain, i.start_date, i.end_date, i.duration_weeks,
-        i.moderation_status, i.is_active, i.created_at
+      `SELECT
+         i.id,
+         i.title,
+         i.description,
+         i.location,
+         i.domain,
+         i.start_date,
+         i.end_date,
+         i.duration_weeks,
+         i.moderation_status,
+         i.is_active,
+         i.created_at
        FROM internships i
        WHERE i.supervisor_id = $1
        ORDER BY i.created_at DESC`,
-      [supervisor.rows[0].id]
+      [supervisor.id]
     );
 
-    res.json(internships.rows);
+    return res.json(internships.rows);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Create internship for supervisor
 export const createInternshipForSupervisor = async (req, res, next) => {
   try {
-    const { id: supervisorId } = req.user;
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
+      return res.status(403).json({ error: "Not authorized as supervisor" });
+    }
+
     const { title, description, location, domain, startDate, endDate } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: "Title and description required" });
-    }
-
-    const supervisor = await query(
-      `SELECT id, company_id FROM supervisors WHERE user_id = $1`,
-      [supervisorId]
-    );
-
-    if (!supervisor.rows.length) {
-      return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
     const durationWeeks = computeDurationWeeks(startDate, endDate);
@@ -134,13 +110,12 @@ export const createInternshipForSupervisor = async (req, res, next) => {
     }
 
     const internship = await query(
-      `INSERT INTO internships 
-        (company_id, supervisor_id, title, description, location, domain, start_date, end_date, duration_weeks, moderation_status, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', true)
+      `INSERT INTO internships
+         (supervisor_id, title, description, location, domain, start_date, end_date, duration_weeks, moderation_status, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', true)
        RETURNING id, title, description, location, domain, start_date, end_date, duration_weeks, created_at`,
       [
-        supervisor.rows[0].company_id,
-        supervisor.rows[0].id,
+        supervisor.id,
         title,
         description,
         location || null,
@@ -151,66 +126,70 @@ export const createInternshipForSupervisor = async (req, res, next) => {
       ]
     );
 
-    res.status(201).json(internship.rows[0]);
+    return res.status(201).json(internship.rows[0]);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Get students for supervisor's internship/project
 export const getSupervisorStudents = async (req, res, next) => {
   try {
-    const { id: supervisorId } = req.user;
-    const { internshipId } = req.params;
-
-    const supervisor = await query(
-      `SELECT id FROM supervisors WHERE user_id = $1`,
-      [supervisorId]
-    );
-
-    if (!supervisor.rows.length) {
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
-    // Verify internship belongs to supervisor
+    const { internshipId } = req.params;
     const internship = await query(
-      `SELECT id FROM internships WHERE id = $1 AND supervisor_id = $2`,
-      [internshipId, supervisor.rows[0].id]
+      `SELECT id
+       FROM internships
+       WHERE id = $1 AND supervisor_id = $2`,
+      [internshipId, supervisor.id]
     );
 
-    if (!internship.rows.length) {
+    if (internship.rows.length === 0) {
       return res.status(404).json({ error: "Internship not found" });
     }
 
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const page = Math.max(1, parseInt(req.query.page || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || "20", 10)));
     const offset = (page - 1) * limit;
 
-    // Get total count for pagination metadata
     const countResult = await query(
-      `SELECT COUNT(*) as total
+      `SELECT COUNT(*)::int AS total
        FROM interns i
-       WHERE i.project_id IN (SELECT id FROM projects WHERE internship_id = $1)`,
+       JOIN projects p ON p.id = i.project_id
+       WHERE p.internship_id = $1`,
       [internshipId]
     );
 
     const students = await query(
-      `SELECT 
-        i.id, s.id as student_id, s.full_name, u.email, s.cv_url, s.cv_file_url, s.cv_parsed_data,
-        i.acceptance_status, i.start_date, i.end_date, i.created_at
+      `SELECT
+         i.id,
+         s.id AS student_id,
+         s.full_name,
+         u.email,
+         s.cv_url,
+         i.status,
+         i.start_date,
+         i.end_date,
+         i.created_at,
+         p.id AS project_id,
+         p.title AS project_title
        FROM interns i
        JOIN students s ON i.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       WHERE i.project_id IN (SELECT id FROM projects WHERE internship_id = $1)
+       JOIN projects p ON p.id = i.project_id
+       WHERE p.internship_id = $1
        ORDER BY i.created_at DESC
        LIMIT $2 OFFSET $3`,
       [internshipId, limit, offset]
     );
 
-    const total = parseInt(countResult.rows[0].total);
-    const totalPages = Math.ceil(total / limit);
+    const total = countResult.rows[0]?.total || 0;
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
-    res.json({
+    return res.json({
       data: students.rows,
       pagination: {
         current_page: page,
@@ -222,31 +201,23 @@ export const getSupervisorStudents = async (req, res, next) => {
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Add student to internship/project
 export const addStudentToInternship = async (req, res, next) => {
+  const client = await pool.connect();
+
   try {
-    const { id: supervisorId } = req.user;
     const internshipId = req.params.internshipId || req.body.internshipId;
-    const {
-      studentId,
-      fullName,
-      email,
-      phone,
-      education,
-      skills,
-      experience,
-      startDate,
-      endDate
-    } = req.body;
+    const { studentId, fullName, email, phone, education, skills, experience, startDate, endDate, projectId } =
+      req.body;
 
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-    const resolvedFullName = typeof fullName === "string" && fullName.trim()
-      ? fullName.trim()
-      : normalizedEmail.split("@")[0] || "Stagiaire";
+    const resolvedFullName =
+      typeof fullName === "string" && fullName.trim()
+        ? fullName.trim()
+        : normalizedEmail.split("@")[0] || "Intern";
 
     if (!internshipId) {
       return res.status(400).json({ error: "internshipId required" });
@@ -256,339 +227,352 @@ export const addStudentToInternship = async (req, res, next) => {
       return res.status(400).json({ error: "Provide studentId or email" });
     }
 
-    const supervisor = await query(
-      `SELECT id FROM supervisors WHERE user_id = $1`,
-      [supervisorId]
-    );
-
-    if (!supervisor.rows.length) {
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
     const internship = await query(
-      `SELECT id FROM internships WHERE id = $1 AND supervisor_id = $2`,
-      [internshipId, supervisor.rows[0].id]
+      `SELECT id, title, description, location, domain
+       FROM internships
+       WHERE id = $1 AND supervisor_id = $2`,
+      [internshipId, supervisor.id]
     );
 
-    if (!internship.rows.length) {
+    if (internship.rows.length === 0) {
       return res.status(404).json({ error: "Internship not found" });
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
+    const durationWeeks = computeDurationWeeks(startDate, endDate);
+    if (startDate && endDate && !durationWeeks) {
+      return res.status(400).json({ error: "Invalid dates. endDate must be after startDate" });
+    }
 
-      // Determine project to use: prefer explicit projectId if provided
-      const providedProjectId =
-        typeof req.body.projectId === "string" && req.body.projectId.trim()
-          ? req.body.projectId.trim()
-          : null;
-      let project;
-      if (providedProjectId) {
-        // Verify provided project belongs to this internship and supervisor
-        project = await client.query(
-          `SELECT id FROM projects WHERE id = $1 AND internship_id = $2 AND supervisor_id = $3 LIMIT 1`,
-          [providedProjectId, internshipId, supervisor.rows[0].id]
+    await client.query("BEGIN");
+
+    let resolvedProjectId = projectId || null;
+    if (resolvedProjectId) {
+      const existingProject = await client.query(
+        `SELECT id
+         FROM projects
+         WHERE id = $1 AND internship_id = $2 AND supervisor_id = $3`,
+        [resolvedProjectId, internshipId, supervisor.id]
+      );
+
+      if (existingProject.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ error: "Provided projectId is invalid for this internship" });
+      }
+    } else {
+      const existingProject = await client.query(
+        `SELECT id
+         FROM projects
+         WHERE internship_id = $1 AND supervisor_id = $2
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [internshipId, supervisor.id]
+      );
+
+      if (existingProject.rows.length > 0) {
+        resolvedProjectId = existingProject.rows[0].id;
+      } else {
+        const createdProject = await client.query(
+          `INSERT INTO projects
+             (internship_id, supervisor_id, title, description, objectives, location, duration, domain)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           RETURNING id`,
+          [
+            internshipId,
+            supervisor.id,
+            `Project for ${internship.rows[0].title}`.slice(0, 180),
+            internship.rows[0].description || null,
+            internship.rows[0].description || null,
+            internship.rows[0].location || null,
+            durationWeeks ? `${durationWeeks} weeks` : null,
+            internship.rows[0].domain || null
+          ]
         );
 
-        if (!project.rows.length) {
-          await client.query("ROLLBACK");
-          return res.status(400).json({ error: "Provided projectId is invalid for this internship" });
+        resolvedProjectId = createdProject.rows[0].id;
+      }
+    }
+
+    let resolvedStudentId = studentId || null;
+    let studentUserId = null;
+    let passwordSetupToken = null;
+    let shouldSendPasswordSetup = false;
+
+    if (!resolvedStudentId) {
+      const existingUser = await client.query("SELECT id, role FROM users WHERE email = $1", [normalizedEmail]);
+
+      if (existingUser.rows.length > 0 && existingUser.rows[0].role !== "student") {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ error: "Email already used by a non-student account" });
+      }
+
+      if (existingUser.rows.length === 0) {
+        const randomPassword = crypto.randomBytes(12).toString("hex");
+        const passwordHash = await bcrypt.hash(randomPassword, 10);
+        const userInsert = await client.query(
+          `INSERT INTO users (email, password_hash, role, is_active, is_email_verified)
+           VALUES ($1, $2, 'student', true, true)
+           RETURNING id`,
+          [normalizedEmail, passwordHash]
+        );
+        studentUserId = userInsert.rows[0].id;
+        shouldSendPasswordSetup = true;
+      } else {
+        studentUserId = existingUser.rows[0].id;
+      }
+
+      const existingStudent = await client.query("SELECT id FROM students WHERE user_id = $1", [studentUserId]);
+
+      if (existingStudent.rows.length > 0) {
+        resolvedStudentId = existingStudent.rows[0].id;
+
+        if (req.file) {
+          const fileUrl = `/uploads/${req.file.filename}`;
+          await client.query(
+            `UPDATE students
+             SET cv_url = $1, updated_at = NOW()
+             WHERE id = $2`,
+            [fileUrl, resolvedStudentId]
+          );
         }
       } else {
-        // Create or reuse a project under the internship
-        // CRITICAL FIX #5: Use ON CONFLICT to prevent race condition
-        project = await client.query(
-          `INSERT INTO projects (internship_id, supervisor_id, title, description)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (internship_id, title) DO UPDATE SET updated_at = NOW()
+        const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const skillsCsv = Array.isArray(skills)
+          ? skills.join(",")
+          : typeof skills === "string"
+            ? skills
+            : "";
+
+        const studentInsert = await client.query(
+          `INSERT INTO students
+             (user_id, created_by_supervisor_id, full_name, phone, education, skills, experience, cv_url, profile_completed)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING id`,
-          [internshipId, supervisor.rows[0].id, "Default Project", ""]
-        );
-      }
-
-      let resolvedStudentId = toSafeNumber(studentId) || studentId || null;
-      let studentUserId = null;
-      let inviteToken = null;
-
-      if (!resolvedStudentId) {
-        const existingUser = await client.query(
-          `SELECT id, role FROM users WHERE email = $1`,
-          [normalizedEmail]
-        );
-
-        if (existingUser.rows.length && existingUser.rows[0].role !== "student") {
-          await client.query("ROLLBACK");
-          return res.status(409).json({ error: "Email already used by non-student account" });
-        }
-
-        if (!existingUser.rows.length) {
-          const randomPassword = Math.random().toString(36).slice(-12);
-          const passwordHash = await bcrypt.hash(randomPassword, 10);
-          const userInsert = await client.query(
-            `INSERT INTO users (email, password_hash, role, is_active, is_email_verified)
-             VALUES ($1, $2, 'student', true, true)
-             RETURNING id`,
-            [normalizedEmail, passwordHash]
-          );
-          studentUserId = userInsert.rows[0].id;
-        } else {
-          studentUserId = existingUser.rows[0].id;
-        }
-
-        const existingStudent = await client.query(
-          `SELECT id FROM students WHERE user_id = $1`,
-          [studentUserId]
+          [
+            studentUserId,
+            supervisor.id,
+            resolvedFullName,
+            phone || null,
+            education || null,
+            skillsCsv,
+            experience || null,
+            fileUrl,
+            Boolean(resolvedFullName && fileUrl)
+          ]
         );
 
-        if (existingStudent.rows.length) {
-          resolvedStudentId = existingStudent.rows[0].id;
-          if (req.file) {
-            const cvUrl = `/uploads/${req.file.filename}`;
-            await client.query(
-              `UPDATE students
-               SET cv_url = COALESCE($1, cv_url),
-                   updated_at = NOW()
-               WHERE id = $2`,
-              [cvUrl, resolvedStudentId]
-            );
-          }
-        } else {
-          const skillsCsv = Array.isArray(skills)
-            ? skills.join(",")
-            : typeof skills === "string"
-              ? skills
-              : "";
-          const cvUrl = req.file ? `/uploads/${req.file.filename}` : null;
-          const studentInsert = await client.query(
-            `INSERT INTO students (user_id, full_name, phone, education, skills, experience, cv_url, profile_completed)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id`,
-            [
-              studentUserId,
-              resolvedFullName,
-              phone || null,
-              education || null,
-              skillsCsv,
-              experience || null,
-              cvUrl,
-              Boolean(resolvedFullName && normalizedEmail && cvUrl)
-            ]
-          );
-          resolvedStudentId = studentInsert.rows[0].id;
-        }
+        resolvedStudentId = studentInsert.rows[0].id;
       }
-
-      if (!resolvedStudentId) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({ error: "Unable to resolve student" });
-      }
-
-      const inviteRecipient = await client.query("SELECT email FROM users WHERE id = $1", [studentUserId]);
-      const inviteEmail = inviteRecipient.rows[0]?.email || normalizedEmail;
-
-      if (inviteEmail) {
-        inviteToken = await issuePasswordResetToken(client, studentUserId);
-      }
-
-      const internDurationWeeks = computeDurationWeeks(startDate, endDate);
-
-      // CRITICAL FIX #1: Check for duplicate intern registration
-      const existingIntern = await client.query(
-        `SELECT i.id
-         FROM interns i
-         JOIN projects p ON p.id = i.project_id
-         WHERE i.student_id = $1 AND p.internship_id = $2
-         LIMIT 1`,
-        [resolvedStudentId, internshipId]
-      );
-      if (existingIntern.rows.length > 0) {
-        await client.query("ROLLBACK");
-        return res.status(409).json({ error: 'Student already registered for this internship' });
-      }
-
-      // Add student as intern
-      const intern = await client.query(
-        `INSERT INTO interns (student_id, project_id, supervisor_id, status, acceptance_status, start_date, end_date)
-         VALUES ($1, $2, $3, 'active', 'pending', $4, $5)
-         RETURNING id, student_id, project_id, start_date, end_date`,
-        [resolvedStudentId, project.rows[0].id, supervisor.rows[0].id, startDate || null, endDate || null]
+    } else {
+      const existingStudent = await client.query(
+        `SELECT s.id, s.user_id
+         FROM students s
+         WHERE s.id = $1`,
+        [resolvedStudentId]
       );
 
-      if (startDate || endDate) {
+      if (existingStudent.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      studentUserId = existingStudent.rows[0].user_id;
+
+      if (req.file) {
+        const fileUrl = `/uploads/${req.file.filename}`;
         await client.query(
-          `UPDATE internships
-           SET start_date = COALESCE($1, start_date),
-               end_date = COALESCE($2, end_date),
-               duration_weeks = COALESCE($3, duration_weeks)
-           WHERE id = $4`,
-          [startDate || null, endDate || null, internDurationWeeks, internshipId]
+          `UPDATE students
+           SET cv_url = $1, updated_at = NOW()
+           WHERE id = $2`,
+          [fileUrl, resolvedStudentId]
         );
       }
-
-      await client.query("COMMIT");
-      
-      // CRITICAL FIX #6: Track email failure and return warning to supervisor
-      let emailSent = true;
-      if (inviteToken && inviteEmail) {
-        try {
-          await sendPasswordSetupMail(inviteEmail, inviteToken);
-        } catch (mailError) {
-          console.error("Password setup email failed:", mailError.message);
-          emailSent = false;
-          // Log but don't fail the operation
-        }
-      }
-      
-      const response = {
-        ...intern.rows[0],
-        ...(emailSent ? {} : { warning: "Email notification failed - student may not receive password setup link" })
-      };
-      res.status(201).json(response);
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
     }
+
+    const existingIntern = await client.query(
+      `SELECT i.id
+       FROM interns i
+       JOIN projects p ON p.id = i.project_id
+       WHERE i.student_id = $1 AND p.internship_id = $2
+       LIMIT 1`,
+      [resolvedStudentId, internshipId]
+    );
+
+    if (existingIntern.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Student already registered for this internship" });
+    }
+
+    const existingActiveAssignment = await client.query(
+      `SELECT i.id, p.title
+       FROM interns i
+       JOIN projects p ON p.id = i.project_id
+       WHERE i.student_id = $1 AND i.status IN ('active', 'paused')
+       LIMIT 1`,
+      [resolvedStudentId]
+    );
+
+    if (existingActiveAssignment.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Student already assigned to another active project",
+        details: existingActiveAssignment.rows[0]
+      });
+    }
+
+    const intern = await client.query(
+      `INSERT INTO interns (student_id, project_id, supervisor_id, status, start_date, end_date)
+       VALUES ($1, $2, $3, 'active', $4, $5)
+       RETURNING id, student_id, project_id, start_date, end_date`,
+      [resolvedStudentId, resolvedProjectId, supervisor.id, startDate || null, endDate || null]
+    );
+
+    if (startDate || endDate) {
+      await client.query(
+        `UPDATE internships
+         SET start_date = COALESCE($1, start_date),
+             end_date = COALESCE($2, end_date),
+             duration_weeks = COALESCE($3, duration_weeks)
+         WHERE id = $4`,
+        [startDate || null, endDate || null, durationWeeks, internshipId]
+      );
+    }
+
+    const tasks = await client.query(
+      `SELECT title
+       FROM tasks
+       WHERE project_id = $1
+       ORDER BY created_at`,
+      [resolvedProjectId]
+    );
+
+    const studentUser = await client.query("SELECT id, email FROM users WHERE id = $1", [studentUserId]);
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, message, is_read)
+       VALUES ($1, 'project_assignment', $2, false)`,
+      [
+        studentUser.rows[0].id,
+        buildProjectNotificationText(
+          internship.rows[0].title,
+          internship.rows[0].description,
+          tasks.rows.map((task) => task.title).filter(Boolean)
+        )
+      ]
+    );
+
+    if (shouldSendPasswordSetup) {
+      passwordSetupToken = await issuePasswordResetToken(client, studentUser.rows[0].id);
+    }
+
+    await client.query("COMMIT");
+
+    let warning = null;
+    if (shouldSendPasswordSetup && passwordSetupToken) {
+      try {
+        await sendPasswordSetupMail(studentUser.rows[0].email, passwordSetupToken);
+      } catch (mailError) {
+        warning = "Password setup email failed to send";
+      }
+    }
+
+    return res.status(201).json({
+      ...intern.rows[0],
+      warning
+    });
   } catch (error) {
-    next(error);
+    await client.query("ROLLBACK");
+    return next(error);
+  } finally {
+    client.release();
   }
 };
 
-// Accept student (supervisor side)
 export const acceptStudent = async (req, res, next) => {
   try {
-    const { id: supervisorId } = req.user;
-    const { internId, projectId, message } = req.body;
-
-    if (!internId || !projectId) {
-      return res.status(400).json({ error: "internId and projectId required" });
+    const { internId, projectId } = req.body;
+    if (!internId) {
+      return res.status(400).json({ error: "internId required" });
     }
 
-    const supervisor = await query(
-      `SELECT id FROM supervisors WHERE user_id = $1`,
-      [supervisorId]
-    );
-
-    if (!supervisor.rows.length) {
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
+    const intern = await query(
+      `SELECT i.id, i.student_id, i.project_id, s.user_id
+       FROM interns i
+       JOIN students s ON s.id = i.student_id
+       WHERE i.id = $1 AND i.supervisor_id = $2`,
+      [internId, supervisor.id]
+    );
 
-      // Get intern details
-      const intern = await client.query(
-        `SELECT i.id, i.student_id, i.project_id, p.internship_id
-         FROM interns i
-         JOIN projects p ON p.id = i.project_id
-         WHERE i.id = $1 AND i.supervisor_id = $2`,
-        [internId, supervisor.rows[0].id]
-      );
-
-      if (!intern.rows.length) {
-        throw new Error("Intern not found");
-      }
-
-      const student = await client.query(
-        `SELECT s.user_id, s.full_name, u.email FROM students s
-         JOIN users u ON u.id = s.user_id
-         WHERE s.id = $1`,
-        [intern.rows[0].student_id]
-      );
-
-      if (!student.rows.length) {
-        throw new Error("Student not found");
-      }
-
-      const project = await client.query(
-        `SELECT p.title, p.description, i.title AS internship_title
-         FROM projects p
-         JOIN internships i ON i.id = p.internship_id
-         WHERE p.id = $1 AND p.supervisor_id = $2`,
-        [projectId, supervisor.rows[0].id]
-      );
-
-      if (!project.rows.length) {
-        throw new Error("Project not found");
-      }
-
-      if (intern.rows[0].internship_id !== project.rows[0].internship_id) {
-        throw new Error("Project does not belong to the same internship");
-      }
-
-      const tasks = await client.query(
-        `SELECT title
-         FROM tasks
-         WHERE project_id = $1
-         ORDER BY created_at ASC`,
-        [projectId]
-      );
-
-      await client.query(
-        `UPDATE interns SET project_id = $1, project_assigned_at = NOW(), acceptance_status = 'accepted', acceptance_date = NOW()
-         WHERE id = $2`,
-        [projectId, internId]
-      );
-
-      const taskTitles = tasks.rows.map((task) => task.title).filter(Boolean);
-      const notificationMessage = buildProjectNotificationText(
-        project.rows[0].title,
-        project.rows[0]?.description || "",
-        taskTitles
-      );
-
-      // Create acceptance workflow record
-      await client.query(
-        `INSERT INTO acceptance_workflows 
-          (student_id, supervisor_id, project_id, status, project_title, supervisor_message, email_sent_at)
-         VALUES ($1, $2, $3, 'accepted', $4, $5, NOW())`,
-        [intern.rows[0].student_id, supervisor.rows[0].id, projectId, project.rows[0].title, message]
-      );
-
-      // Create notification
-      await client.query(
-        `INSERT INTO notifications (user_id, type, message)
-         VALUES ($1, 'acceptance', $2)`,
-        [
-          student.rows[0].user_id,
-          `${project.rows[0]?.internship_title || "Projet StageFlow"}\n${notificationMessage}`
-        ]
-      );
-
-      await client.query("COMMIT");
-      try {
-        await sendMail({
-          to: student.rows[0].email,
-          subject: `Votre projet StageFlow: ${project.rows[0].title}`,
-          text: buildProjectNotificationText(project.rows[0].title, project.rows[0]?.description || "", taskTitles),
-          html: buildProjectNotificationHtml(project.rows[0].title, project.rows[0]?.description || "", taskTitles)
-        });
-      } catch (mailError) {
-        // Notification inserted in-app; email delivery failure should not block acceptance.
-      }
-
-      res.json({ success: true, message: "Student accepted" });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
+    if (intern.rows.length === 0) {
+      return res.status(404).json({ error: "Intern not found" });
     }
+
+    let finalProjectId = intern.rows[0].project_id;
+    if (projectId) {
+      const project = await query(
+        `SELECT id
+         FROM projects
+         WHERE id = $1 AND supervisor_id = $2`,
+        [projectId, supervisor.id]
+      );
+
+      if (project.rows.length === 0) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      finalProjectId = projectId;
+      await query("UPDATE interns SET project_id = $1 WHERE id = $2", [projectId, internId]);
+    }
+
+    const tasks = await query(
+      `SELECT title
+       FROM tasks
+       WHERE project_id = $1
+       ORDER BY created_at`,
+      [finalProjectId]
+    );
+
+    const projectInfo = await query(
+      `SELECT title, description
+       FROM projects
+       WHERE id = $1`,
+      [finalProjectId]
+    );
+
+    await query(
+      `INSERT INTO notifications (user_id, type, message, is_read)
+       VALUES ($1, 'acceptance', $2, false)`,
+      [
+        intern.rows[0].user_id,
+        buildProjectNotificationText(
+          projectInfo.rows[0]?.title || "StageFlow Project",
+          projectInfo.rows[0]?.description || null,
+          tasks.rows.map((task) => task.title).filter(Boolean)
+        )
+      ]
+    );
+
+    return res.json({ success: true, message: "Student accepted" });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
 export const deleteStudentFromInternship = async (req, res, next) => {
   try {
-    const { id: supervisorUserId } = req.user;
     const { internshipId, internId } = req.params;
 
-    const supervisor = await query(`SELECT id FROM supervisors WHERE user_id = $1`, [supervisorUserId]);
-    if (!supervisor.rows.length) {
+    const supervisor = await getSupervisor(req.user.id);
+    if (!supervisor) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
@@ -600,10 +584,10 @@ export const deleteStudentFromInternship = async (req, res, next) => {
          AND p.internship_id = $2
          AND i.supervisor_id = $3
        RETURNING i.id`,
-      [internId, internshipId, supervisor.rows[0].id]
+      [internId, internshipId, supervisor.id]
     );
 
-    if (!deleted.rows.length) {
+    if (deleted.rows.length === 0) {
       return res.status(404).json({ error: "Intern not found" });
     }
 
@@ -622,42 +606,51 @@ export const n8nCvParsedWebhook = async (req, res, next) => {
       return res.status(401).json({ error: "Invalid webhook token" });
     }
 
-    const { studentId, email, cvParsedData, cv_file_url: cvFileUrl, cvUrl } = req.body;
-
+    const { studentId, email, cv_file_url: cvFileUrl, cvUrl } = req.body;
     if (!studentId && !email) {
       return res.status(400).json({ error: "studentId or email required" });
+    }
+
+    const resolvedUrl = cvFileUrl || cvUrl || null;
+    if (!resolvedUrl) {
+      return res.json({
+        success: true,
+        message: "CV parsing payload received. Simplified schema does not persist parsed metadata."
+      });
     }
 
     let result;
     if (studentId) {
       result = await query(
         `UPDATE students
-         SET cv_parsed_data = $1,
-             cv_file_url = COALESCE($2, cv_file_url),
+         SET cv_url = COALESCE($1, cv_url),
              updated_at = NOW()
-         WHERE id = $3
+         WHERE id = $2
          RETURNING id`,
-        [cvParsedData || null, cvFileUrl || cvUrl || null, studentId]
+        [resolvedUrl, studentId]
       );
     } else {
       result = await query(
         `UPDATE students s
-         SET cv_parsed_data = $1,
-             cv_file_url = COALESCE($2, s.cv_file_url),
+         SET cv_url = COALESCE($1, s.cv_url),
              updated_at = NOW()
          FROM users u
          WHERE s.user_id = u.id
-           AND lower(u.email) = lower($3)
+           AND lower(u.email) = lower($2)
          RETURNING s.id`,
-        [cvParsedData || null, cvFileUrl || cvUrl || null, email]
+        [resolvedUrl, email]
       );
     }
 
-    if (!result.rows.length) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Student not found" });
     }
 
-    return res.json({ success: true, studentId: result.rows[0].id });
+    return res.json({
+      success: true,
+      studentId: result.rows[0].id,
+      message: "CV link updated. Simplified schema does not persist parsed metadata."
+    });
   } catch (error) {
     return next(error);
   }

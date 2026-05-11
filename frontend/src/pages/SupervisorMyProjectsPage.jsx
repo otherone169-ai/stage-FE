@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import FormField from "../components/FormField";
 import PageLayout from "../components/PageLayout";
-import EmptyState from "../components/EmptyState";
 
 const buildInitialProjectForm = () => ({
+  internshipId: "",
   title: "",
   description: "",
   objectives: "",
@@ -16,14 +16,13 @@ const buildInitialProjectForm = () => ({
   requirements: ""
 });
 
-
 const SupervisorMyProjectsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [students, setStudents] = useState([]);
+  const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("projects");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [projectForm, setProjectForm] = useState(buildInitialProjectForm());
   const [error, setError] = useState("");
@@ -31,7 +30,7 @@ const SupervisorMyProjectsPage = () => {
 
   useEffect(() => {
     if (!user || user.role !== "supervisor") {
-      navigate("/app/login");
+      navigate("/app/dashboard");
       return;
     }
 
@@ -41,12 +40,15 @@ const SupervisorMyProjectsPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [projectsResponse, studentsResponse] = await Promise.all([
-        client.get("/api/projects"),
-        client.get("/api/students")
+      setError("");
+      const [projectsResponse, studentsResponse, internshipsResponse] = await Promise.all([
+        client.get("/projects"),
+        client.get("/supervisors/students"),
+        client.get("/internships/my")
       ]);
       setProjects(projectsResponse.data || []);
       setStudents(studentsResponse.data || []);
+      setInternships(internshipsResponse.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load data");
     } finally {
@@ -59,12 +61,16 @@ const SupervisorMyProjectsPage = () => {
     setProjectForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  
   const handleProjectSubmit = async (event) => {
     event.preventDefault();
 
+    if (!projectForm.internshipId) {
+      setError("Please select an internship first.");
+      return;
+    }
+
     if (!projectForm.title.trim()) {
-      setError("Le titre du projet est requis");
+      setError("Project title is required.");
       return;
     }
 
@@ -72,18 +78,18 @@ const SupervisorMyProjectsPage = () => {
       setError("");
       setSuccess("");
 
-      const response = await client.post("/api/projects", {
+      const response = await client.post("/projects", {
+        internshipId: projectForm.internshipId,
         title: projectForm.title.trim(),
         description: projectForm.description.trim() || "",
         objectives: projectForm.objectives.trim() || "",
         location: projectForm.location.trim() || "",
         duration: projectForm.duration.trim() || "",
         domain: projectForm.domain.trim() || "",
-        requirements: projectForm.requirements.trim() || "",
-        tasks: projectForm.tasks
+        requirements: projectForm.requirements.trim() || ""
       });
 
-      setSuccess(`Projet "${response.data.title}" créé avec succès.`);
+      setSuccess(`Project "${response.data.title}" created successfully.`);
       setProjectForm(buildInitialProjectForm());
       setShowCreateForm(false);
       await loadData();
@@ -92,16 +98,15 @@ const SupervisorMyProjectsPage = () => {
     }
   };
 
-  
   const deleteProject = async (projectId) => {
-    if (!window.confirm("Supprimer ce projet ?")) {
+    if (!window.confirm("Delete this project?")) {
       return;
     }
 
     try {
       setError("");
-      await client.delete(`/api/projects/${projectId}`);
-      setSuccess("Projet supprimé");
+      await client.delete(`/projects/${projectId}`);
+      setSuccess("Project deleted.");
       await loadData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete project");
@@ -112,117 +117,77 @@ const SupervisorMyProjectsPage = () => {
     return (
       <div className="supervisor-projects-container">
         <div className="loading-spinner-professional">
-          <div className="spinner"></div>
+          <div className="spinner" />
         </div>
       </div>
     );
   }
 
   return (
-    <PageLayout 
-      title="🏗️ Mes Projets & Stagiaires"
-      subtitle="Gérez vos projets et assignez des stagiaires de manière professionnelle"
+    <PageLayout
+      title="My projects and interns"
+      subtitle="Monitor the internships you manage and create new project workspaces."
       actions={
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          {showCreateForm ? "✖️ Annuler" : "➕ Créer un projet"}
+        <button className="btn btn-primary" onClick={() => setShowCreateForm((current) => !current)}>
+          {showCreateForm ? "Cancel" : "Create a project"}
         </button>
       }
     >
-      {/* Professional Stats Grid */}
       <div className="projects-stats-grid">
         <div className="stat-card">
-          <div className="stat-card-icon">📊</div>
           <div className="stat-card-value">{projects.length}</div>
-          <div className="stat-card-label">Projets actifs</div>
+          <div className="stat-card-label">Projects</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-icon">👥</div>
-          <div className="stat-card-value">{students.filter(s => !s.assigned_project_id).length}</div>
-          <div className="stat-card-label">Stagiaires disponibles</div>
+          <div className="stat-card-value">{students.filter((student) => !student.assigned_project_id).length}</div>
+          <div className="stat-card-label">Available interns</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-icon">✅</div>
-          <div className="stat-card-value">{students.filter(s => s.assigned_project_id).length}</div>
-          <div className="stat-card-label">Stagiaires assignés</div>
+          <div className="stat-card-value">{students.filter((student) => student.assigned_project_id).length}</div>
+          <div className="stat-card-label">Assigned interns</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{internships.length}</div>
+          <div className="stat-card-label">Internships</div>
         </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {/* Projects Tab */}
       <div className="projects-grid">
         {projects.length === 0 ? (
           <div className="empty-state-professional stretched">
-            <div className="empty-state-icon">📁</div>
-            <h3 className="empty-state-title">Aucun projet</h3>
-            <p className="empty-state-description">Commencez par créer votre premier projet pour encadrer vos stagiaires.</p>
+            <h3>No projects yet</h3>
+            <p>Create your first project under one of your internships.</p>
           </div>
         ) : (
           projects.map((project) => (
             <div key={project.id} className="project-card">
               <div className="project-card-header">
-                <h3 className="project-card-title">{project.title}</h3>
-              </div>
-              
-              {project.description && (
-                <p className="project-card-description">{project.description}</p>
-              )}
-              
-              {project.objectives && (
-                <div className="project-objectives">
-                  <h4>🎯 Objectifs</h4>
-                  <p>{project.objectives}</p>
+                <div>
+                  <h3 className="project-card-title">{project.title}</h3>
+                  <p className="muted-cell">{project.internship_title}</p>
                 </div>
-              )}
+              </div>
+
+              {project.description && <p className="project-card-description">{project.description}</p>}
 
               <div className="project-card-meta">
-                <div className="meta-item">
-                  <span className="meta-label">📍 Localisation:</span>
-                  <span>{project.location || "Non spécifiée"}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">⏱️ Durée:</span>
-                  <span>{project.duration || "Non spécifiée"}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">🔧 Domaine:</span>
-                  <span>{project.domain || "Non spécifié"}</span>
-                </div>
+                <div className="meta-item"><span className="meta-label">Location:</span><span>{project.location || "-"}</span></div>
+                <div className="meta-item"><span className="meta-label">Duration:</span><span>{project.duration || "-"}</span></div>
+                <div className="meta-item"><span className="meta-label">Domain:</span><span>{project.domain || "-"}</span></div>
               </div>
 
               <div className="project-card-stats">
-                <div className="project-stat">
-                  <span className="project-stat-value">{project.task_count || 0}</span>
-                  <span className="project-stat-label">Tâches</span>
-                </div>
-                <div className="project-stat">
-                  <span className="project-stat-value">{project.completed_task_count || 0}</span>
-                  <span className="project-stat-label">Terminées</span>
-                </div>
-                <div className="project-stat">
-                  <span className="project-stat-value">{project.interns_count || 0}</span>
-                  <span className="project-stat-label">Stagiaires</span>
-                </div>
+                <div className="project-stat"><span className="project-stat-value">{project.task_count || 0}</span><span className="project-stat-label">Tasks</span></div>
+                <div className="project-stat"><span className="project-stat-value">{project.completed_task_count || 0}</span><span className="project-stat-label">Done</span></div>
+                <div className="project-stat"><span className="project-stat-value">{project.interns_count || 0}</span><span className="project-stat-label">Interns</span></div>
               </div>
 
-              {project.requirements && (
-                <div className="project-requirements">
-                  <h4>📋 Prérequis</h4>
-                  <p>{project.requirements}</p>
-                </div>
-              )}
-
               <div className="project-card-actions">
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => deleteProject(project.id)}
-                  aria-label={`Supprimer le projet ${project.title}`}
-                >
-                  🗑️ Supprimer
+                <button className="btn btn-secondary" onClick={() => deleteProject(project.id)}>
+                  Delete
                 </button>
               </div>
             </div>
@@ -230,99 +195,51 @@ const SupervisorMyProjectsPage = () => {
         )}
       </div>
 
-      {/* Create Project Modal */}
       {showCreateForm && (
         <div className="modal-overlay" onClick={() => setShowCreateForm(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <h3>🏗️ Créer un nouveau projet</h3>
-              <button 
-                className="modal-close-btn"
-                onClick={() => setShowCreateForm(false)}
-                aria-label="Fermer"
-              >
-                ✖️
+              <h3>Create a new project</h3>
+              <button className="modal-close-btn" onClick={() => setShowCreateForm(false)} aria-label="Close">
+                X
               </button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleProjectSubmit} className="form-grid">
-                <FormField
-                  id="title"
-                  label="Titre du projet *"
-                  name="title"
-                  value={projectForm.title}
-                  onChange={handleProjectInputChange}
-                  required
-                  placeholder="Ex: Application Web de Gestion"
-                />
+                <div className="form-field">
+                  <label htmlFor="internshipId">Internship</label>
+                  <select
+                    id="internshipId"
+                    name="internshipId"
+                    value={projectForm.internshipId}
+                    onChange={handleProjectInputChange}
+                    className="form-select"
+                    required
+                  >
+                    <option value="">Select an internship</option>
+                    {internships.map((internship) => (
+                      <option key={internship.id} value={internship.id}>
+                        {internship.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <FormField
-                  id="description"
-                  label="Description"
-                  name="description"
-                  value={projectForm.description}
-                  onChange={handleProjectInputChange}
-                  placeholder="Description détaillée du projet"
-                  multiline
-                />
-
-                <FormField
-                  id="objectives"
-                  label="Objectifs"
-                  name="objectives"
-                  value={projectForm.objectives}
-                  onChange={handleProjectInputChange}
-                  placeholder="Objectifs à atteindre"
-                  multiline
-                />
-
-                <FormField
-                  id="location"
-                  label="Localisation"
-                  name="location"
-                  value={projectForm.location}
-                  onChange={handleProjectInputChange}
-                  placeholder="Ex: Remote, Paris, etc."
-                />
-
-                <FormField
-                  id="duration"
-                  label="Durée"
-                  name="duration"
-                  value={projectForm.duration}
-                  onChange={handleProjectInputChange}
-                  placeholder="Ex: 3 mois, 6 semaines"
-                />
-
-                <FormField
-                  id="domain"
-                  label="Domaine"
-                  name="domain"
-                  value={projectForm.domain}
-                  onChange={handleProjectInputChange}
-                  placeholder="Ex: Développement Web, Marketing"
-                />
-
-                <FormField
-                  id="requirements"
-                  label="Prérequis"
-                  name="requirements"
-                  value={projectForm.requirements}
-                  onChange={handleProjectInputChange}
-                  placeholder="Compétences requises"
-                  multiline
-                />
+                <FormField id="title" label="Project title" name="title" value={projectForm.title} onChange={handleProjectInputChange} required />
+                <FormField id="description" label="Description" name="description" value={projectForm.description} onChange={handleProjectInputChange} multiline />
+                <FormField id="objectives" label="Objectives" name="objectives" value={projectForm.objectives} onChange={handleProjectInputChange} multiline />
+                <FormField id="location" label="Location" name="location" value={projectForm.location} onChange={handleProjectInputChange} />
+                <FormField id="duration" label="Duration" name="duration" value={projectForm.duration} onChange={handleProjectInputChange} />
+                <FormField id="domain" label="Domain" name="domain" value={projectForm.domain} onChange={handleProjectInputChange} />
+                <FormField id="requirements" label="Requirements" name="requirements" value={projectForm.requirements} onChange={handleProjectInputChange} multiline />
               </form>
             </div>
             <div className="modal-footer">
-              <button type="button" 
-                className="btn btn-secondary"
-                onClick={() => setShowCreateForm(false)}
-              >
-                Annuler
+              <button type="button" className="btn btn-secondary" onClick={() => setShowCreateForm(false)}>
+                Cancel
               </button>
-              <button type="submit" className="btn btn-primary" onClick={handleProjectSubmit}>
-                ✅ Créer le projet
+              <button type="button" className="btn btn-primary" onClick={handleProjectSubmit}>
+                Create project
               </button>
             </div>
           </div>

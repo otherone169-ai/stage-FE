@@ -2243,15 +2243,17 @@ tbody tr:last-child td {
   border: 1.5px solid #d8e0d9;
   border-radius: 12px;
   box-sizing: border-box; /* Crucial pour la largeur 100% */
-  transition: border-color 0.2s ease;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  transition: all 0.3s ease;
+  background: #f3f5ef;
+  color: #1e2a24;
   font-size: 1rem;
 }
 
 .form-input:focus {
-  border-color: #0070f3; /* Ou votre couleur primaire */
+  border-color: var(--accent);
   outline: none;
+  background: #f3f5ef;
+  box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.1);
 }
 
 .form-input.error {
@@ -2265,6 +2267,7 @@ tbody tr:last-child td {
 
 .form-input:hover:not(:focus) {
   border-color: rgba(15, 139, 141, 0.3);
+  background: #f3f5ef;
 }
 
 .form-input.error:hover:not(:focus) {
@@ -3497,14 +3500,13 @@ tbody tr:last-child td {
 .task-form .form-input,
 .task-form .form-textarea,
 .task-form .form-select {
-  background: #0d1117;
-  border: 1px solid #30363d;
+  background: #f3f5ef;
+  border: 1.5px solid #d8e0d9;
   border-radius: 8px;
-  padding: 12px 16px;
-  color: var(--text-primary);
+  padding: 14px 16px;
+  color: #1e2a24;
   font-size: 0.95rem;
-  transition: all 0.2s ease;
-  width: 100%;
+  transition: all 0.3s ease;
   box-sizing: border-box;
 }
 
@@ -3514,14 +3516,14 @@ tbody tr:last-child td {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.1);
-  background: #0d1117;
+  background: #f3f5ef;
 }
 
 .task-form .form-input:hover,
 .task-form .form-textarea:hover,
 .task-form .form-select:hover {
-  border-color: #484f58;
-  background: #0d1117;
+  border-color: rgba(15, 139, 141, 0.3);
+  background: #f3f5ef;
 }
 
 .task-form .form-textarea {
@@ -3541,7 +3543,7 @@ tbody tr:last-child td {
 
 .task-form .form-input::placeholder,
 .task-form .form-textarea::placeholder {
-  color: #7d8590;
+  color: #64748b;
 }
 
 .task-submit-btn {
@@ -4027,11 +4029,11 @@ tbody tr:last-child td {
 .form-textarea,
 .form-file {
   padding: 12px 16px;
-  border: 2px solid var(--border);
+  border: 1.5px solid #d8e0d9;
   border-radius: 8px;
   font-size: 1rem;
-  background: var(--bg-main);
-  color: var(--text-primary);
+  background: #f3f5ef;
+  color: #1e2a24;
   transition: all 0.3s ease;
 }
 
@@ -4042,6 +4044,7 @@ tbody tr:last-child td {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.1);
+  background: #f3f5ef;
 }
 
 .form-textarea {
@@ -4759,11 +4762,11 @@ tbody tr:last-child td {
 }
 
 .form-input {
-  background: #0d1117;
-  border: 2px solid #30363d;
+  background: #f3f5ef;
+  border: 1.5px solid #d8e0d9;
   border-radius: 8px;
   padding: 14px 16px;
-  color: var(--text-primary);
+  color: #1e2a24;
   font-size: 0.95rem;
   transition: all 0.3s ease;
   font-family: inherit;
@@ -4773,11 +4776,11 @@ tbody tr:last-child td {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.1);
-  background: #0d1117;
+  background: #f3f5ef;
 }
 
 .form-input::placeholder {
-  color: #484f58;
+  color: #64748b;
 }
 
 .readonly-input {

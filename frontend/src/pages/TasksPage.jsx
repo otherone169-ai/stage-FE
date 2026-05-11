@@ -535,18 +535,24 @@ const TasksPage = () => {
 
             <div className="task-comments-section">
               <p className="section-kicker">Commentaires ({remarks.length})</p>
-              <form className="comment-form" onSubmit={handleRemarkSubmit}>
-                <textarea
-                  placeholder="Ajouter un commentaire..."
-                  value={remarkContent}
-                  onChange={(e) => setRemarkContent(e.target.value)}
-                  required
-                  className="comment-textarea"
-                />
-                <button type="submit" className="comment-submit-btn">
-                  Ajouter un commentaire
-                </button>
-              </form>
+              {isSupervisor ? (
+                <form className="comment-form" onSubmit={handleRemarkSubmit}>
+                  <textarea
+                    placeholder="Ajouter un commentaire..."
+                    value={remarkContent}
+                    onChange={(e) => setRemarkContent(e.target.value)}
+                    required
+                    className="comment-textarea"
+                  />
+                  <button type="submit" className="comment-submit-btn">
+                    Ajouter un commentaire
+                  </button>
+                </form>
+              ) : (
+                <p className="muted-cell" style={{ marginBottom: "16px" }}>
+                  Les commentaires de suivi sont ajoutes par le superviseur.
+                </p>
+              )}
 
               {remarks.length === 0 ? (
                 <p className="no-comments">Aucun commentaire pour le moment.</p>
@@ -554,7 +560,7 @@ const TasksPage = () => {
                 <div className="remarks-list">
                   {remarks.map((remark) => (
                     <div key={remark.id} className="remark-item">
-                      <strong>{remark.author_name || "Anonyme"}</strong>
+                      <strong>{remark.author_name || remark.email || "Anonyme"}</strong>
                       <small>
                         {new Date(remark.created_at).toLocaleDateString()} {new Date(remark.created_at).toLocaleTimeString()}
                       </small>

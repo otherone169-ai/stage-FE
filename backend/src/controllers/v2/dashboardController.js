@@ -1,11 +1,11 @@
 import { query } from "../../config/db.js";
 
 const formatTasks = (tasks) => ({
-  total: tasks.total,
-  todo: tasks.todo,
-  inProgress: tasks.in_progress,
-  done: tasks.done,
-  progress: tasks.total > 0 ? Math.round((tasks.done / tasks.total) * 100) : 0
+  total: Number(tasks.total || 0),
+  todo: Number(tasks.todo || 0),
+  inProgress: Number(tasks.in_progress || 0),
+  done: Number(tasks.done || 0),
+  progress: Number(tasks.total || 0) > 0 ? Math.round((Number(tasks.done || 0) / Number(tasks.total || 0)) * 100) : 0
 });
 
 const zeroApplications = {
@@ -17,30 +17,39 @@ const zeroApplications = {
 export const getDashboard = async (req, res, next) => {
   try {
     if (req.user.role === "admin") {
-      const [globalCounts, taskBreakdown, appBreakdown, supervisorsByCompany] = await Promise.all([
+      const [globalCounts, taskBreakdown, appBreakdown, reportCounts, supervisorsByCompany] = await Promise.all([
         query(
           `SELECT
-            (SELECT COUNT(*)::int FROM users WHERE role = 'student') AS total_students,
-            (SELECT COUNT(*)::int FROM supervisors) AS total_supervisors,
-            (SELECT COUNT(DISTINCT company_name)::int FROM supervisors) AS total_companies,
-            (SELECT COUNT(*)::int FROM internships WHERE is_active = true) AS total_internships,
-            (SELECT COUNT(*)::int FROM applications) AS total_applications,
-            (SELECT COUNT(*)::int FROM interns) AS total_interns`
+             (SELECT COUNT(*)::int FROM users) AS total_users,
+             (SELECT COUNT(*)::int FROM users WHERE role = 'student') AS total_students,
+             (SELECT COUNT(*)::int FROM supervisors) AS total_supervisors,
+             (SELECT COUNT(DISTINCT company_name)::int FROM supervisors) AS total_companies,
+             (SELECT COUNT(*)::int FROM internships WHERE is_active = true) AS total_internships,
+             (SELECT COUNT(*)::int FROM applications) AS total_applications,
+             (SELECT COUNT(*)::int FROM interns) AS total_interns,
+             (SELECT COUNT(*)::int FROM reports) AS total_reports`
         ),
         query(
           `SELECT
-            COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE status = 'todo')::int AS todo,
-            COUNT(*) FILTER (WHERE status = 'in_progress')::int AS in_progress,
-            COUNT(*) FILTER (WHERE status = 'done')::int AS done
-          FROM tasks`
+             COUNT(*)::int AS total,
+             COUNT(*) FILTER (WHERE status = 'todo')::int AS todo,
+             COUNT(*) FILTER (WHERE status = 'in_progress')::int AS in_progress,
+             COUNT(*) FILTER (WHERE status = 'done')::int AS done
+           FROM tasks`
         ),
         query(
           `SELECT
-            COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
-            COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted,
-            COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected
-          FROM applications`
+             COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
+             COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted,
+             COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected
+           FROM applications`
+        ),
+        query(
+          `SELECT
+             COUNT(*) FILTER (WHERE status = 'submitted')::int AS submitted,
+             COUNT(*) FILTER (WHERE status = 'validated')::int AS validated,
+             COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected
+           FROM reports`
         ),
         query(
           `SELECT company_name, COUNT(*)::int AS supervisors_count
@@ -60,17 +69,22 @@ export const getDashboard = async (req, res, next) => {
           companies: totals.total_companies,
           internships: totals.total_internships,
           applications: totals.total_applications,
-          interns: totals.total_interns
+          interns: totals.total_interns,
+          reports: totals.total_reports,
+          totalUsers: totals.total_users,
+          totalInternships: totals.total_internships,
+          totalApplications: totals.total_applications,
+          totalReports: totals.total_reports
         },
         tasks: formatTasks(taskBreakdown.rows[0]),
         applications: appBreakdown.rows[0],
+        reports: reportCounts.rows[0],
         supervisorsByCompany: supervisorsByCompany.rows
       });
     }
 
-    
     if (req.user.role === "supervisor") {
-      const supervisor = await query("SELECT id, company_name FROM supervisors WHERE user_id = $1", [req.user.id]);
+      const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
       if (supervisor.rows.length === 0) {
         return res.status(404).json({ message: "Supervisor profile not found" });
       }
@@ -104,9 +118,9 @@ export const getDashboard = async (req, res, next) => {
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'rejected')::int AS rejected_reports
            FROM supervisors s
            LEFT JOIN projects p ON p.supervisor_id = s.id
-           LEFT JOIN internships i ON i.id = p.internship_id
+           LEFT JOIN internships i ON i.supervisor_id = s.id
            LEFT JOIN interns inr ON inr.supervisor_id = s.id
-           LEFT JOIN reports r ON r.supervisor_id = s.id
+           LEFT JOIN reports r ON r.project_id = p.id
            WHERE s.id = $1`,
           [supervisorId]
         )
@@ -118,11 +132,10 @@ export const getDashboard = async (req, res, next) => {
         scope: "supervisor",
         summary: {
           students: scopedSummary.students,
-          supervisors: 1,
-          companies: 1,
           internships: scopedSummary.internships,
           applications: 0,
           interns: scopedSummary.interns,
+          activeInternships: scopedSummary.active_interns,
           activeInterns: scopedSummary.active_interns,
           projects: scopedSummary.projects,
           reports: scopedSummary.reports,
@@ -145,7 +158,7 @@ export const getDashboard = async (req, res, next) => {
     }
 
     if (req.user.role === "student") {
-      const student = await query("SELECT id FROM students WHERE user_id = $1", [req.user.id]);
+      const student = await query("SELECT id, profile_completed FROM students WHERE user_id = $1", [req.user.id]);
       if (student.rows.length === 0) {
         return res.status(404).json({ message: "Student profile not found" });
       }
@@ -183,14 +196,12 @@ export const getDashboard = async (req, res, next) => {
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'draft')::int AS draft_reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'submitted')::int AS submitted_reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'validated')::int AS validated_reports,
-             COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'rejected')::int AS rejected_reports,
-             BOOL_OR(s.profile_completed)::boolean AS profile_completed
-           FROM students s
-           LEFT JOIN interns inr ON inr.student_id = s.id
+             COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'rejected')::int AS rejected_reports
+           FROM interns inr
            LEFT JOIN projects p ON p.id = inr.project_id
            LEFT JOIN internships i ON i.id = p.internship_id
            LEFT JOIN reports r ON r.intern_id = inr.id
-           WHERE s.id = $1`,
+           WHERE inr.student_id = $1`,
           [studentId]
         )
       ]);
@@ -201,16 +212,13 @@ export const getDashboard = async (req, res, next) => {
       return res.json({
         scope: "student",
         summary: {
-          students: 1,
-          supervisors: 0,
-          companies: 0,
           internships: scopedSummary.internships,
           activeInternships: scopedSummary.active_internships,
           applications: Number(app.pending || 0) + Number(app.accepted || 0) + Number(app.rejected || 0),
           interns: scopedSummary.interns,
           projects: scopedSummary.projects,
           reports: scopedSummary.reports,
-          profileCompleted: Boolean(scopedSummary.profile_completed)
+          profileCompleted: Boolean(student.rows[0].profile_completed)
         },
         tasks: formatTasks(tasks.rows[0]),
         applications: app,

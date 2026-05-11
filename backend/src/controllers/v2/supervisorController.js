@@ -1,8 +1,10 @@
-import { query } from "../../config/db.js";
-import pool from "../../config/db.js";
+import pool, { query } from "../../config/db.js";
 import { logAudit } from "../../utils/audit.js";
 
-// ===== ADMIN MANAGEMENT (CRUD for supervisors) =====
+const getSupervisorByUserId = async (userId) => {
+  const result = await query("SELECT * FROM supervisors WHERE user_id = $1", [userId]);
+  return result.rows[0] || null;
+};
 
 export const listSupervisors = async (req, res, next) => {
   try {
@@ -11,26 +13,36 @@ export const listSupervisors = async (req, res, next) => {
 
     if (req.query.companyName) {
       values.push(`%${req.query.companyName}%`);
-      where.push(`c.name ILIKE $${values.length}`);
+      where.push(`s.company_name ILIKE $${values.length}`);
     }
 
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
 
     const result = await query(
-      `SELECT 
-        s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at,
-        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
-        u.email,
-        COUNT(DISTINCT i.id) as interns_count,
-        COUNT(DISTINCT t.id) as tasks_count
-      FROM supervisors s
-      JOIN users u ON u.id = s.user_id
-      JOIN companies c ON c.id = s.company_id
-      LEFT JOIN interns i ON i.supervisor_id = s.id AND i.status = 'active'
-      LEFT JOIN tasks t ON t.project_id IN (SELECT id FROM projects WHERE supervisor_id = s.id)
-      ${whereClause}
-      GROUP BY s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at, c.name, c.description, c.location, c.website, u.email
-      ORDER BY s.created_at DESC`,
+      `SELECT
+         s.id,
+         s.user_id,
+         s.full_name,
+         s.position,
+         s.company_name,
+         s.company_description,
+         s.company_location,
+         s.company_website,
+         s.created_at,
+         s.updated_at,
+         u.email,
+         u.is_active,
+         COUNT(DISTINCT i.id)::int AS interns_count,
+         COUNT(DISTINCT p.id)::int AS projects_count,
+         COUNT(DISTINCT t.id)::int AS tasks_count
+       FROM supervisors s
+       JOIN users u ON u.id = s.user_id
+       LEFT JOIN interns i ON i.supervisor_id = s.id AND i.status = 'active'
+       LEFT JOIN projects p ON p.supervisor_id = s.id
+       LEFT JOIN tasks t ON t.project_id = p.id
+       ${whereClause}
+       GROUP BY s.id, u.id
+       ORDER BY s.created_at DESC`,
       values
     );
 
@@ -43,14 +55,22 @@ export const listSupervisors = async (req, res, next) => {
 export const getSupervisorDetails = async (req, res, next) => {
   try {
     const supervisor = await query(
-      `SELECT 
-        s.id, s.user_id, s.full_name, s.position, s.created_at, s.updated_at,
-        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
-        u.email
-      FROM supervisors s
-      JOIN users u ON u.id = s.user_id
-      JOIN companies c ON c.id = s.company_id
-      WHERE s.id = $1`,
+      `SELECT
+         s.id,
+         s.user_id,
+         s.full_name,
+         s.position,
+         s.company_name,
+         s.company_description,
+         s.company_location,
+         s.company_website,
+         s.created_at,
+         s.updated_at,
+         u.email,
+         u.is_active
+       FROM supervisors s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.id = $1`,
       [req.params.id]
     );
 
@@ -58,21 +78,23 @@ export const getSupervisorDetails = async (req, res, next) => {
       return res.status(404).json({ message: "Supervisor not found" });
     }
 
-    // Get assigned interns with projects
     const interns = await query(
-      `SELECT 
-        i.id, i.status, i.start_date, i.end_date,
-        st.full_name as student_name,
-        p.title as project_title,
-        COUNT(DISTINCT t.id) as task_count,
-        COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END) as completed_task_count
-      FROM interns i
-      JOIN students st ON st.id = i.student_id
-      JOIN projects p ON p.id = i.project_id
-      LEFT JOIN tasks t ON t.project_id = p.id
-      WHERE i.supervisor_id = $1
-      GROUP BY i.id
-      ORDER BY i.created_at DESC`,
+      `SELECT
+         i.id,
+         i.status,
+         i.start_date,
+         i.end_date,
+         st.full_name AS student_name,
+         p.title AS project_title,
+         COUNT(DISTINCT t.id)::int AS task_count,
+         COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END)::int AS completed_task_count
+       FROM interns i
+       JOIN students st ON st.id = i.student_id
+       JOIN projects p ON p.id = i.project_id
+       LEFT JOIN tasks t ON t.project_id = p.id
+       WHERE i.supervisor_id = $1
+       GROUP BY i.id, st.full_name, p.title
+       ORDER BY i.created_at DESC`,
       [req.params.id]
     );
 
@@ -87,7 +109,7 @@ export const getSupervisorDetails = async (req, res, next) => {
 
 export const updateSupervisor = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT * FROM supervisors WHERE id = $1", [req.params.id]);
+    const supervisor = await query("SELECT id FROM supervisors WHERE id = $1", [req.params.id]);
 
     if (supervisor.rows.length === 0) {
       return res.status(404).json({ message: "Supervisor not found" });
@@ -97,16 +119,25 @@ export const updateSupervisor = async (req, res, next) => {
       `UPDATE supervisors
        SET full_name = COALESCE($1, full_name),
            position = COALESCE($2, position),
+           company_name = COALESCE($3, company_name),
+           company_description = COALESCE($4, company_description),
+           company_location = COALESCE($5, company_location),
+           company_website = COALESCE($6, company_website),
            updated_at = NOW()
-       WHERE id = $3
+       WHERE id = $7
        RETURNING *`,
-      [req.body.fullName ?? null, req.body.position ?? null, req.params.id]
+      [
+        req.body.fullName ?? null,
+        req.body.position ?? null,
+        req.body.companyName ?? null,
+        req.body.companyDescription ?? null,
+        req.body.companyLocation ?? null,
+        req.body.companyWebsite ?? null,
+        req.params.id
+      ]
     );
 
-    await logAudit(req.user.id, "SUPERVISOR_UPDATED", {
-      supervisorId: req.params.id
-    });
-
+    await logAudit(req.user.id, "SUPERVISOR_UPDATED", { supervisorId: req.params.id });
     return res.json(result.rows[0]);
   } catch (error) {
     return next(error);
@@ -115,18 +146,14 @@ export const updateSupervisor = async (req, res, next) => {
 
 export const deleteSupervisor = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT * FROM supervisors WHERE id = $1", [req.params.id]);
+    const supervisor = await query("SELECT id FROM supervisors WHERE id = $1", [req.params.id]);
 
     if (supervisor.rows.length === 0) {
       return res.status(404).json({ message: "Supervisor not found" });
     }
 
-    // Delete supervisor and cascade
     await query("DELETE FROM supervisors WHERE id = $1", [req.params.id]);
-
-    await logAudit(req.user.id, "SUPERVISOR_DELETED", {
-      supervisorId: req.params.id
-    });
+    await logAudit(req.user.id, "SUPERVISOR_DELETED", { supervisorId: req.params.id });
 
     return res.status(204).send();
   } catch (error) {
@@ -134,19 +161,23 @@ export const deleteSupervisor = async (req, res, next) => {
   }
 };
 
-// ===== SUPERVISOR PROFILE (My Profile) =====
-
 export const getMyProfile = async (req, res, next) => {
   try {
     const supervisor = await query(
-      `SELECT 
-        s.id, s.full_name, s.position, s.created_at, s.updated_at,
-        c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
-        u.email
-      FROM supervisors s
-      JOIN users u ON u.id = s.user_id
-      JOIN companies c ON c.id = s.company_id
-      WHERE s.user_id = $1`,
+      `SELECT
+         s.id,
+         s.full_name,
+         s.position,
+         s.company_name,
+         s.company_description,
+         s.company_location,
+         s.company_website,
+         s.created_at,
+         s.updated_at,
+         u.email
+       FROM supervisors s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.user_id = $1`,
       [req.user.id]
     );
 
@@ -161,103 +192,97 @@ export const getMyProfile = async (req, res, next) => {
 };
 
 export const updateMyProfile = async (req, res, next) => {
+  const client = await pool.connect();
+
   try {
-    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      
-      // Update supervisor profile
-      await client.query(
-        `UPDATE supervisors
-         SET full_name = COALESCE($1, full_name),
-             position = COALESCE($2, position),
-             updated_at = NOW()
-         WHERE user_id = $3`,
-        [
-          req.body.fullName ?? null,
-          req.body.position ?? null,
-          req.user.id
-        ]
-      );
-      
-      // Update company information
-      if (req.body.companyName || req.body.companyDescription || req.body.companyLocation || req.body.companyWebsite) {
-        await client.query(
-          `UPDATE companies
-           SET name = COALESCE($1, name),
-               description = COALESCE($2, description),
-               location = COALESCE($3, location),
-               website = COALESCE($4, website),
-               updated_at = NOW()
-           WHERE id = (SELECT company_id FROM supervisors WHERE user_id = $5)`,
-          [
-            req.body.companyName ?? null,
-            req.body.companyDescription ?? null,
-            req.body.companyLocation ?? null,
-            req.body.companyWebsite ?? null,
-            req.user.id
-          ]
-        );
-      }
-      
-      await client.query("COMMIT");
-      
-      // Return updated profile
-      const updatedProfile = await query(
-        `SELECT 
-          s.id, s.full_name, s.position, s.created_at, s.updated_at,
-          c.name as company_name, c.description as company_description, c.location as company_location, c.website as company_website,
-          u.email
-        FROM supervisors s
-        JOIN users u ON u.id = s.user_id
-        JOIN companies c ON c.id = s.company_id
-        WHERE s.user_id = $1`,
-        [req.user.id]
-      );
-      
-      return res.json(updatedProfile.rows[0]);
-    } catch (error) {
-      await client.query("ROLLBACK");
-      return next(error);
-    } finally {
-      client.release();
-    }
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE supervisors
+       SET full_name = COALESCE($1, full_name),
+           position = COALESCE($2, position),
+           company_name = COALESCE($3, company_name),
+           company_description = COALESCE($4, company_description),
+           company_location = COALESCE($5, company_location),
+           company_website = COALESCE($6, company_website),
+           updated_at = NOW()
+       WHERE user_id = $7`,
+      [
+        req.body.fullName ?? null,
+        req.body.position ?? null,
+        req.body.companyName ?? null,
+        req.body.companyDescription ?? null,
+        req.body.companyLocation ?? null,
+        req.body.companyWebsite ?? null,
+        req.user.id
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await query(
+      `SELECT
+         s.id,
+         s.full_name,
+         s.position,
+         s.company_name,
+         s.company_description,
+         s.company_location,
+         s.company_website,
+         s.created_at,
+         s.updated_at,
+         u.email
+       FROM supervisors s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.user_id = $1`,
+      [req.user.id]
+    );
+
+    await logAudit(req.user.id, "SUPERVISOR_PROFILE_UPDATED", { supervisorId: supervisor.id });
+    return res.json(updated.rows[0]);
   } catch (error) {
+    await client.query("ROLLBACK");
     return next(error);
+  } finally {
+    client.release();
   }
 };
 
-// ===== SUPERVISOR INTERNS MANAGEMENT =====
-
 export const listMyInterns = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const result = await query(
-      `SELECT 
-        i.id, i.status, i.start_date, i.end_date,
-        st.id as student_id, st.full_name, st.skills,
-        p.id as project_id, p.title as project_title,
-        COUNT(DISTINCT t.id) as total_tasks,
-        COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END) as completed_tasks,
-        COUNT(DISTINCT f.id) as feedback_count
-      FROM interns i
-      JOIN students st ON st.id = i.student_id
-      JOIN projects p ON p.id = i.project_id
-      LEFT JOIN tasks t ON t.project_id = p.id
-      LEFT JOIN feedbacks f ON f.intern_id = i.id
-      WHERE i.supervisor_id = $1
-      GROUP BY i.id
-      ORDER BY i.created_at DESC`,
-      [supervisor.rows[0].id]
+      `SELECT
+         i.id,
+         i.status,
+         i.start_date,
+         i.end_date,
+         st.id AS student_id,
+         st.full_name,
+         st.skills,
+         p.id AS project_id,
+         p.title AS project_title,
+         COUNT(DISTINCT t.id)::int AS total_tasks,
+         COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END)::int AS completed_tasks,
+         COUNT(DISTINCT f.id)::int AS feedback_count
+       FROM interns i
+       JOIN students st ON st.id = i.student_id
+       JOIN projects p ON p.id = i.project_id
+       LEFT JOIN tasks t ON t.project_id = p.id
+       LEFT JOIN feedbacks f ON f.intern_id = i.id
+       WHERE i.supervisor_id = $1
+       GROUP BY i.id, st.id, p.id
+       ORDER BY i.created_at DESC`,
+      [supervisor.id]
     );
 
     return res.json(result.rows);
@@ -268,17 +293,28 @@ export const listMyInterns = async (req, res, next) => {
 
 export const listCompanyInternships = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT company_id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const result = await query(
-      `SELECT id, title, description, location, duration, domain, required_skills, moderation_status, is_active, created_at
+      `SELECT
+         id,
+         title,
+         description,
+         location,
+         domain,
+         start_date,
+         end_date,
+         duration_weeks,
+         moderation_status,
+         is_active,
+         created_at
        FROM internships
-       WHERE company_id = $1 AND moderation_status = 'approved'
+       WHERE supervisor_id = $1
        ORDER BY created_at DESC`,
-      [supervisor.rows[0].company_id]
+      [supervisor.id]
     );
 
     return res.json(result.rows);
@@ -289,32 +325,36 @@ export const listCompanyInternships = async (req, res, next) => {
 
 export const getInternDetails = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const intern = await query(
-      `SELECT 
-        i.*, 
-        st.id as student_id, st.full_name, st.skills, st.phone,
-        u.email as student_email,
-        p.title as project_title, p.description as project_description,
-        int.title as internship_title
-      FROM interns i
-      JOIN students st ON st.id = i.student_id
-      JOIN users u ON u.id = st.user_id
-      JOIN projects p ON p.id = i.project_id
-      JOIN internships int ON int.id = p.internship_id
-      WHERE i.id = $1 AND i.supervisor_id = $2`,
-      [req.params.internId, supervisor.rows[0].id]
+      `SELECT
+         i.*,
+         st.id AS student_id,
+         st.full_name,
+         st.skills,
+         st.phone,
+         st.education,
+         u.email AS student_email,
+         p.title AS project_title,
+         p.description AS project_description,
+         intp.title AS internship_title
+       FROM interns i
+       JOIN students st ON st.id = i.student_id
+       JOIN users u ON u.id = st.user_id
+       JOIN projects p ON p.id = i.project_id
+       JOIN internships intp ON intp.id = p.internship_id
+       WHERE i.id = $1 AND i.supervisor_id = $2`,
+      [req.params.internId, supervisor.id]
     );
 
     if (intern.rows.length === 0) {
       return res.status(404).json({ message: "Intern not found" });
     }
 
-    // Get tasks
     const tasks = await query(
       `SELECT id, title, description, deadline, status, created_at
        FROM tasks
@@ -323,11 +363,14 @@ export const getInternDetails = async (req, res, next) => {
       [intern.rows[0].project_id]
     );
 
-    // Get feedback
     const feedback = await query(
-      `SELECT * FROM feedbacks
-       WHERE intern_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT
+         f.*,
+         u.email AS author_email
+       FROM feedbacks f
+       JOIN users u ON u.id = f.user_id
+       WHERE f.intern_id = $1
+       ORDER BY f.created_at DESC`,
       [req.params.internId]
     );
 
@@ -343,17 +386,17 @@ export const getInternDetails = async (req, res, next) => {
 
 export const addInternFeedback = async (req, res, next) => {
   try {
-    const { comment } = req.body;
     const internId = req.params.internId;
+    const { comment, rating } = req.body;
 
-    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const internOwnership = await query("SELECT id FROM interns WHERE id = $1 AND supervisor_id = $2", [
       internId,
-      supervisor.rows[0].id
+      supervisor.id
     ]);
 
     if (internOwnership.rows.length === 0) {
@@ -361,10 +404,13 @@ export const addInternFeedback = async (req, res, next) => {
     }
 
     const result = await query(
-      "INSERT INTO feedbacks (supervisor_id, intern_id, comment) VALUES ($1, $2, $3) RETURNING *",
-      [supervisor.rows[0].id, internId, comment]
+      `INSERT INTO feedbacks (user_id, intern_id, comment, rating)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [req.user.id, internId, comment, rating ?? null]
     );
 
+    await logAudit(req.user.id, "INTERN_FEEDBACK_ADDED", { internId, feedbackId: result.rows[0].id });
     return res.status(201).json(result.rows[0]);
   } catch (error) {
     return next(error);
@@ -373,14 +419,14 @@ export const addInternFeedback = async (req, res, next) => {
 
 export const updateInternStatus = async (req, res, next) => {
   try {
-    const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
-    if (supervisor.rows.length === 0) {
+    const supervisor = await getSupervisorByUserId(req.user.id);
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor profile not found" });
     }
 
     const intern = await query("SELECT id FROM interns WHERE id = $1 AND supervisor_id = $2", [
       req.params.internId,
-      supervisor.rows[0].id
+      supervisor.id
     ]);
 
     if (intern.rows.length === 0) {

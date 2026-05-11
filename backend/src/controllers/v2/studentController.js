@@ -1,6 +1,7 @@
 import { query } from "../../config/db.js";
 import { logAudit } from "../../utils/audit.js";
 import jwt from "jsonwebtoken";
+import { validateStudentSupervisorRelationship } from "../../middleware/referentialIntegrity.js";
 
 const toSkillCsv = (skills) => (Array.isArray(skills) ? skills.map((s) => s.trim()).join(",") : "");
 
@@ -13,7 +14,21 @@ export const getMyProfile = async (req, res, next) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Student profile not found" });
     }
-    return res.json(result.rows[0]);
+
+    const student = result.rows[0];
+    
+    // Valider l'intégrité référentielle
+    try {
+      await validateStudentSupervisorRelationship(student.id);
+    } catch (integrityError) {
+      console.error('Referential integrity violation:', integrityError.message);
+      return res.status(400).json({ 
+        message: "Student account integrity error: " + integrityError.message,
+        code: 'REFERENTIAL_INTEGRITY_ERROR'
+      });
+    }
+
+    return res.json(student);
   } catch (error) {
     return next(error);
   }
@@ -75,12 +90,21 @@ export const updateMyProfile = async (req, res, next) => {
 export const listMyApplications = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT a.id, a.status, a.applied_at, i.id AS internship_id, i.title, s.company_name
+      `SELECT
+         a.id,
+         a.status,
+         a.applied_at,
+         a.cover_letter,
+         i.id AS internship_id,
+         i.title,
+         i.description,
+         sup.company_name,
+         sup.full_name AS supervisor_name
        FROM applications a
-       JOIN students s ON s.id = a.student_id
+       JOIN students st ON st.id = a.student_id
        JOIN internships i ON i.id = a.internship_id
-       JOIN supervisors s ON s.id = i.supervisor_id
-       WHERE s.user_id = $1
+       JOIN supervisors sup ON sup.id = i.supervisor_id
+       WHERE st.user_id = $1
        ORDER BY a.applied_at DESC`,
       [req.user.id]
     );
@@ -168,7 +192,20 @@ export const uploadMyCv = async (req, res, next) => {
     );
 
     const updated = await query(
-      "UPDATE students SET cv_url = $1, updated_at = NOW() WHERE user_id = $2 RETURNING *",
+      `UPDATE students
+       SET cv_url = $1,
+           profile_completed = CASE
+             WHEN full_name IS NOT NULL
+               AND phone IS NOT NULL
+               AND education IS NOT NULL
+               AND COALESCE(skills, '') <> ''
+               AND $1 IS NOT NULL
+             THEN true
+             ELSE profile_completed
+           END,
+           updated_at = NOW()
+       WHERE user_id = $2
+       RETURNING *`,
       [fileUrl, req.user.id]
     );
 
@@ -208,17 +245,44 @@ export const getMyCvDownloadToken = async (req, res, next) => {
 
 export const listStudents = async (req, res, next) => {
   try {
+    const values = [];
+    const where = ["u.is_active = true"];
+
+    if (req.user?.role === "supervisor") {
+      const supervisor = await query("SELECT id FROM supervisors WHERE user_id = $1", [req.user.id]);
+      if (supervisor.rows.length === 0) {
+        return res.status(404).json({ message: "Supervisor profile not found" });
+      }
+
+      values.push(supervisor.rows[0].id);
+      where.push(`s.created_by_supervisor_id = $${values.length}`);
+    }
+
     const result = await query(
-      `SELECT s.id, s.full_name, s.phone, s.education, s.skills, s.experience, s.cv_url, s.profile_completed,
-              u.email, u.created_at,
-              i.id as assigned_project_id, i.status as assignment_status, p.title as assigned_project_title
+      `SELECT
+         s.id,
+         s.full_name,
+         s.phone,
+         s.education,
+         s.skills,
+         s.experience,
+         s.cv_url,
+         s.profile_completed,
+         u.email,
+         u.created_at,
+         i.id AS assignment_id,
+         i.project_id AS assigned_project_id,
+         i.status AS assignment_status,
+         p.title AS assigned_project_title
        FROM students s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN interns i ON i.student_id = s.id AND i.status IN ('active', 'paused')
        LEFT JOIN projects p ON p.id = i.project_id
-       WHERE u.is_active = true
-       ORDER BY s.full_name`
+       WHERE ${where.join(" AND ")}
+       ORDER BY s.full_name NULLS LAST, u.created_at DESC`,
+      values
     );
+
     return res.json(result.rows);
   } catch (error) {
     return next(error);

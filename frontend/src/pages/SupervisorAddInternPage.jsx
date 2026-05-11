@@ -50,10 +50,10 @@ const SupervisorAddInternPage = () => {
     if (selectedInternship) {
       const loadProjects = async () => {
         try {
-          const response = await apiClient.get(`/api/projects?internship_id=${selectedInternship}`);
+          const response = await apiClient.get(`/projects?internshipId=${selectedInternship}`);
           setProjects(response.data || []);
         } catch (err) {
-          console.error("Failed to load projects:", err);
+          setProjects([]);
         }
       };
       loadProjects();

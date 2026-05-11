@@ -48,7 +48,18 @@ export const getNotifications = async (req, res, next) => {
     const offset = parseInt(req.query.offset || "0", 10);
 
     const result = await query(
-      `SELECT id, type, message, is_read, created_at
+      `SELECT
+         id,
+         type,
+         message,
+         is_read,
+         created_at,
+         CASE
+           WHEN type IN ('task_created', 'task_updated', 'task_started', 'task_finished') THEN '/app/tasks'
+           WHEN type = 'project_assignment' THEN '/app/student/my-project'
+           WHEN type = 'acceptance' THEN '/app/reports'
+           ELSE NULL
+         END AS link_url
        FROM notifications
        WHERE user_id = $1
        ORDER BY created_at DESC

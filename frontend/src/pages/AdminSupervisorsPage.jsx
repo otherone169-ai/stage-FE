@@ -84,7 +84,7 @@ const AdminSupervisorsPage = () => {
             </thead>
             <tbody>
               {filteredSupervisors.map((supervisor) => (
-                <tr key={supervisor.id}>
+                <tr key={supervisor.supervisor_id || supervisor.user_id}>
                   <td>{supervisor.full_name || "-"}</td>
                   <td>{supervisor.email}</td>
                   <td>

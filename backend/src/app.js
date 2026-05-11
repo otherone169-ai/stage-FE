@@ -13,7 +13,6 @@ import supervisorRoutes from "./routes/v2/supervisorRoutes.js";
 import projectRoutes from "./routes/v2/projectRoutes.js";
 import taskRoutes from "./routes/v2/taskRoutes.js";
 import reportRoutes from "./routes/v2/reportRoutes.js";
-import supervisorStudentRoutes from "./routes/v2/supervisorStudentRoutes.js";
 import workflowRoutes from "./routes/v2/workflowRoutes.js";
 import { errorHandler, notFound } from "./middlewares/errorMiddleware.js";
 import { requestContext } from "./middlewares/requestContext.js";

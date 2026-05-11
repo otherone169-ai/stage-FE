@@ -25,16 +25,16 @@ router.post(
   "/",
   sensitiveLimiter,
   authenticate,
-  authorize("company"),
+  authorize("supervisor"),
   validate(createInternshipSchema),
   createInternship
 );
-router.get("/my", authenticate, authorize("company"), listMyInternships);
+router.get("/my", authenticate, authorize("supervisor"), listMyInternships);
 router.patch(
   "/:id",
   sensitiveLimiter,
   authenticate,
-  authorize("company"),
+  authorize("supervisor"),
   validate(updateInternshipSchema),
   updateInternship
 );
@@ -42,7 +42,7 @@ router.patch(
   "/:id/status",
   sensitiveLimiter,
   authenticate,
-  authorize("company"),
+  authorize("supervisor"),
   validate(internshipStatusSchema),
   updateInternshipStatus
 );

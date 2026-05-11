@@ -23,39 +23,22 @@ const AdminAnalyticsPage = () => {
       try {
         setLoading(true);
         setError("");
-        
-        // Try to fetch real data
-        try {
-          const { data: usersData } = await apiClient.get("/admin/analytics/users-distribution");
-          const { data: internshipData } = await apiClient.get("/admin/analytics/internship-status");
-          
-          setAnalytics({
-            usersDistribution: usersData || {
-              students: 0,
-              supervisors: 0,
-              admins: 0
-            },
-            internshipStatus: internshipData || {
-              pending: 0,
-              active: 0,
-              completed: 0
-            }
-          });
-        } catch (apiError) {
-          // Fallback to hardcoded data if API not ready
-          setAnalytics({
-            usersDistribution: {
-              students: 15,
-              supervisors: 8,
-              admins: 3
-            },
-            internshipStatus: {
-              pending: 12,
-              active: 23,
-              completed: 45
-            }
-          });
-        }
+
+        const { data: usersData } = await apiClient.get("/admin/analytics/users-distribution");
+        const { data: internshipData } = await apiClient.get("/admin/analytics/internship-status");
+
+        setAnalytics({
+          usersDistribution: usersData || {
+            students: 0,
+            supervisors: 0,
+            admins: 0
+          },
+          internshipStatus: internshipData || {
+            pending: 0,
+            active: 0,
+            completed: 0
+          }
+        });
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load analytics");
       } finally {

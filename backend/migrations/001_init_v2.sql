@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS students (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  created_by_supervisor_id UUID NOT NULL REFERENCES supervisors(id) ON DELETE RESTRICT,
   full_name VARCHAR(140),
   phone VARCHAR(40),
   education TEXT,
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_students_user_id ON students(user_id);
+CREATE INDEX IF NOT EXISTS idx_students_created_by_supervisor_id ON students(created_by_supervisor_id);
 CREATE INDEX IF NOT EXISTS idx_companies_user_id ON companies(user_id);
 CREATE INDEX IF NOT EXISTS idx_supervisors_company_id ON supervisors(company_id);
 CREATE INDEX IF NOT EXISTS idx_internships_company_id ON internships(company_id);

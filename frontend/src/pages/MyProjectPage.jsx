@@ -32,7 +32,7 @@ const MyProjectPage = () => {
         setError("");
 
         // Fetch assigned project
-        const projectRes = await apiClient.get("/projects/my-assigned-project");
+        const projectRes = await apiClient.get("/projects/my-assigned");
         setProject(projectRes.data);
 
         // Fetch tasks for the assigned project

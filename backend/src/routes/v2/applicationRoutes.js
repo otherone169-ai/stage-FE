@@ -17,12 +17,12 @@ import { sensitiveLimiter } from "../../middlewares/rateLimit.js";
 const router = express.Router();
 
 router.post("/", sensitiveLimiter, authenticate, authorize("student"), validate(applySchema), applyToInternship);
-router.get("/internships/:internshipId/applicants", authenticate, authorize("company"), listApplicants);
+router.get("/internships/:internshipId/applicants", authenticate, authorize("supervisor"), listApplicants);
 router.patch(
   "/:applicationId/review",
   sensitiveLimiter,
   authenticate,
-  authorize("company"),
+  authorize("supervisor"),
   validate(reviewApplicationSchema),
   reviewApplication
 );
@@ -30,7 +30,7 @@ router.patch(
   "/interns/:internId/assign-supervisor",
   sensitiveLimiter,
   authenticate,
-  authorize("company"),
+  authorize("supervisor"),
   validate(assignSupervisorSchema),
   assignSupervisor
 );

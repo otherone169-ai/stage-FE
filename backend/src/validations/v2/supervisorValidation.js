@@ -4,13 +4,20 @@ export const createSupervisorSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
   fullName: Joi.string().max(140).required(),
-  companyId: Joi.string().uuid().required(),
+  companyName: Joi.string().max(180).required(),
+  companyDescription: Joi.string().max(2000).allow("", null),
+  companyLocation: Joi.string().max(140).allow("", null),
+  companyWebsite: Joi.string().uri().allow("", null),
   position: Joi.string().max(140).allow("", null)
 });
 
 export const updateSupervisorSchema = Joi.object({
   fullName: Joi.string().max(140),
-  position: Joi.string().max(140).allow("", null)
+  position: Joi.string().max(140).allow("", null),
+  companyName: Joi.string().max(180).allow("", null),
+  companyDescription: Joi.string().max(2000).allow("", null),
+  companyLocation: Joi.string().max(140).allow("", null),
+  companyWebsite: Joi.string().uri().allow("", null)
 });
 
 export const internFeedbackSchema = Joi.object({
@@ -44,6 +51,6 @@ export const addStudentToInternshipSchema = Joi.object({
     .messages({
       "date.min": "End date must be on or after start date"
     }),
-  projectId: Joi.string().optional().allow("", null),
-  studentId: Joi.string().optional().allow("", null)
+  projectId: Joi.string().uuid().optional().allow("", null),
+  studentId: Joi.string().uuid().optional().allow("", null)
 });

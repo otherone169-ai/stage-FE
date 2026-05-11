@@ -37,9 +37,9 @@ router.patch("/:id/status", authenticate, authorize("supervisor", "student"), va
 
 router.delete("/:id", authenticate, authorize("supervisor"), deleteTask);
 
-// Task Remarks (both supervisor and student)
-router.post("/:taskId/remarks", authenticate, authorize("supervisor", "student"), validate(createRemarkSchema), addRemark);
+// Task Remarks (supervisor writes, both roles can read)
+router.post("/:taskId/remarks", authenticate, authorize("supervisor"), validate(createRemarkSchema), addRemark);
 router.get("/:taskId/remarks", authenticate, authorize("supervisor", "student"), listTaskRemarks);
-router.delete("/remarks/:remarkId", authenticate, authorize("supervisor", "student"), deleteRemark);
+router.delete("/remarks/:remarkId", authenticate, authorize("supervisor"), deleteRemark);
 
 export default router;
