@@ -9,8 +9,8 @@
 \usepackage{geometry}
 \geometry{margin=2.5cm}
 
-% Numérotation des chapitres en chiffres romains
-\renewcommand{\thechapter}{\Roman{chapter}}
+% Numérotation des chapitres en chiffres arabes
+\renewcommand{\thechapter}{\arabic{chapter}}
 
 \begin{document}
 
@@ -430,7 +430,7 @@ stage.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.jpg}
+  \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.PNG}
   \caption{Figure IV.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
   \label{fig:seq-compte}
 \end{figure}
@@ -441,6 +441,55 @@ stage.
   \caption{Figure IV.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
   \label{fig:activite-suivi}
 \end{figure}
+
+\chapter{Modèle de données PostgreSQL}
+
+\section{Conception de la base de données}
+
+La base de données PostgreSQL constitue le fondement de la persistance des données pour la plateforme StageFlow. Elle est conçue selon un modèle relationnel strict qui garantit l'intégrité des données, la cohérence des transactions et la traçabilité complète des opérations métier. Le schéma relationnel reflète fidèlement les entités métier identifiées lors de l'analyse fonctionnelle : utilisateurs, stages, tâches, remarques et rapports.
+
+L'architecture de la base de données s'appuie sur des contraintes d'intégrité référentielle fortes, des index stratégiques pour optimiser les performances des requêtes fréquentes, et des mécanismes d'historisation pour conserver une trace auditable de toutes les modifications critiques. Chaque table est conçue pour supporter les workflows métier spécifiques de StageFlow, tout en facilitant l'évolution future du système.
+
+\section{Diagramme de classes UML et relations entités}
+
+Le diagramme de classes UML ci-dessous présente la structure complète du modèle de données de StageFlow. Il illustre les entités principales, leurs attributs, et les relations qui les unissent, en correspondance directe avec le schéma relationnel implémenté dans PostgreSQL.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
+  \caption{Diagramme de classes UML : entités principales et relations du modèle de données}
+  \label{fig:uml-classes-data}
+\end{figure}
+
+\paragraph{Analyse des relations entre entités}
+
+Les relations entre les entités du modèle de données sont conçues pour assurer la cohérence et l'intégrité du système :
+
+\textbf{Utilisateurs et Rôles :} L'entité \texttt{Utilisateur} représente l'ensemble des acteurs du système (administrateurs, superviseurs, étudiants). Elle possède un attribut \texttt{role} qui définit le rôle de chaque utilisateur, implémentant ainsi le modèle RBAC (Role-Based Access Control). Cette relation permet de contrôler finement les accès aux fonctionnalités selon les permissions attribuées à chaque rôle.
+
+\textbf{Projets et Superviseurs :} La relation entre \texttt{Projet} et \texttt{Superviseur} est de type plusieurs-à-un. Un superviseur peut créer et gérer plusieurs projets (stages), mais chaque projet est rattaché à un seul superviseur responsable. Cette relation garantit une clarification des responsabilités et facilite le suivi pédagogique.
+
+\textbf{Projets et Stagiaires :} La relation entre \texttt{Projet} et \texttt{Stagiaire} est de type plusieurs-à-un. Un projet peut concerner plusieurs stagiaires, mais un stagiaire ne peut être associé qu'à un seul projet à la fois. Cette approche garantit une gestion claire des affectations tout en permettant le suivi de plusieurs stagiaires au sein d'un même projet.
+
+\textbf{Tâches et Projets :} L'entité \texttt{Tache} est liée à un projet spécifique. Chaque tâche possède des attributs de suivi (statut, dateDébut, dateFin) qui évoluent selon le workflow métier. Cette relation permet un découpage structuré du travail en unités gérables et traçables.
+
+\textbf{Applications et Stagiaires :} L'entité \texttt{Application} gère le processus de candidature et d'affectation. Elle est liée à un stagiaire et permet de suivre l'état des candidatures, créant ainsi un historique complet du processus d'admission aux stages.
+
+\textbf{Stagiaires Actifs :} L'entité \texttt{StagiaireActive} représente les stagiaires actuellement en stage. Elle est liée à un \texttt{Stagiaire} et à un \texttt{Projet}, et inclut les informations de suivi actif comme l'état du rapport de stage et la méthode de dépôt du rapport final.
+
+\paragraph{Correspondance avec le schéma PostgreSQL}
+
+Le diagramme UML se traduit directement en schéma relationnel PostgreSQL avec les correspondances suivantes :
+
+\begin{itemize}
+  \item \textbf{Entités UML → Tables PostgreSQL} : Les classes \texttt{Utilisateur}, \texttt{Stagiaire}, \texttt{Superviseur}, \texttt{Projet}, \texttt{Tache}, \texttt{Application} et \texttt{StagiaireActive} deviennent des tables dans la base de données.
+  \item \textbf{Attributs → Colonnes} : Les propriétés de chaque classe deviennent des colonnes avec des types de données appropriés (VARCHAR, TEXT, INTEGER, TIMESTAMP, BOOLEAN, ENUM).
+  \item \textbf{Associations → Clés étrangères} : Les relations entre classes sont implémentées via des contraintes de clés étrangères garantissant l'intégrité référentielle.
+  \item \textbf{Cardinalités → Contraintes} : Les multiplicités (1-1, 1-n, n-m) sont traduites en contraintes NOT NULL, UNIQUE et relations un-à-plusieurs.
+  \item \textbf{Spécialisation → Héritage} : L'entité \texttt{Superviseur} spécialise \texttt{Utilisateur} pour représenter le rôle spécifique de superviseur dans le système.
+\end{itemize}
+
+Cette conception assure une cohérence parfaite entre le modèle conceptuel UML et l'implémentation physique dans PostgreSQL, facilitant ainsi la maintenance, l'évolution et la compréhension du système de données.
 
 \chapter{Architecture technique}
 
@@ -462,13 +511,6 @@ orchestrent la logique métier, les middlewares assurent les préoccupations tra
 (authentification, validation, gestion d'erreurs, logging), et la base de données
 matérialise les règles d'intégrité via contraintes de clés étrangères, index adaptés et
 historisation des actions critiques.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\textwidth]{screen/UMLClass1.png}
-  \caption{Figure V.1 :: Diagramme de classes UML : entités principales et relations}
-  \label{fig:uml-classes}
-\end{figure}
 
 \section{Stack technologique}
 
@@ -499,6 +541,102 @@ critiques de l'API, tandis que RBAC garantit qu'un utilisateur n'accède qu'aux 
 compatibles avec son rôle métier. Les mots de passe sont hachés via bcrypt. Les logs
 des actions sensibles sont enregistrés pour l'auditabilité et l'investigation en cas
 d'incident.
+
+\subsection{Flux complet d'authentification JWT}
+
+Le système d'authentification JWT de StageFlow implémente un flux sécurisé et stateless impliquant plusieurs composants qui communiquent selon une séquence précise :
+
+\paragraph{Architecture des composants}
+
+\begin{itemize}
+  \item \textbf{Navigateur client} : Interface utilisateur (React/Vite) pour la saisie des identifiants
+  \item \textbf{Frontend Application} : Gestion des tokens, redirections et état utilisateur
+  \item \textbf{Backend Server} : API Express.js avec middleware JWT et validation RBAC
+  \item \textbf{Base de données PostgreSQL} : Stockage sécurisé des identifiants et rôles
+  \item \textbf{JWT Token} : Jeton signé contenant les informations d'authentification
+\end{itemize}
+
+\paragraph{Séquence complète d'authentification}
+
+\textbf{Étape 1 - Initialisation de la connexion}
+\begin{enumerate}
+  \item L'utilisateur saisit email et mot de passe dans le formulaire de connexion
+  \item Le frontend React/Vite valide les champs côté client (format email, non-vide)
+  \item La requête POST est envoyée à \texttt{/api/auth/login} avec les identifiants en JSON
+\end{enumerate}
+
+\textbf{Étape 2 - Traitement backend}
+\begin{enumerate}
+  \setcounter{enumi}{3}
+  \item Le middleware Joi valide la structure des données reçues
+  \item Le contrôleur d'authentification recherche l'utilisateur dans PostgreSQL
+  \item La requête SQL vérifie l'existence de l'email dans la table \texttt{users}
+  \item Si trouvé, le mot de passe fourni est comparé au hash bcrypt stocké
+  \item La fonction \texttt{bcrypt.compare()} valide le mot de passe de manière sécurisée
+\end{enumerate}
+
+\textbf{Étape 3 - Génération du JWT}
+\begin{enumerate}
+  \setcounter{enumi}{8}
+  \item En cas de succès, le backend génère un payload JWT contenant :
+  \begin{itemize}
+    \item \texttt{userId} : Identifiant unique de l'utilisateur
+    \item \texttt{email} : Adresse email de l'utilisateur
+    \item \texttt{role} : Rôle (administrateur, superviseur, étudiant)
+    \item \texttt{iat} : Timestamp de création (issued at)
+    \item \texttt{exp} : Timestamp d'expiration (généralement 24h)
+  \end{itemize}
+  \item Le JWT est signé avec la clé secrète \texttt{process.env.JWT\_SECRET}
+  \item Le token est retourné au frontend dans la réponse HTTP
+\end{enumerate}
+
+\textbf{Étape 4 - Stockage et utilisation du token}
+\begin{enumerate}
+  \setcounter{enumi}{12}
+  \item Le frontend stocke le JWT dans \texttt{localStorage} ou \texttt{sessionStorage}
+  \item L'état utilisateur est mis à jour dans le contexte React
+  \item L'utilisateur est redirigé vers le tableau de bord selon son rôle
+  \item Axios est configuré pour inclure automatiquement le JWT dans les headers
+\end{enumerate}
+
+\textbf{Étape 5 - Requêtes authentifiées}
+\begin{enumerate}
+  \setcounter{enumi}{16}
+  \item Pour chaque requête API protégée, le frontend ajoute le header :
+  \begin{verbatim}
+    Authorization: Bearer <JWT_TOKEN>
+  \end{verbatim}
+  \item Le middleware JWT intercepte la requête sur les routes protégées
+  \item Le token est extrait du header et sa signature est vérifiée
+  \item Le payload est décodé et les informations utilisateur sont extraites
+  \item Le middleware RBAC vérifie si le rôle autorise l'accès à la ressource
+  \item Si autorisé, la requête poursuit vers le contrôleur final
+\end{enumerate}
+
+\textbf{Étape 6 - Gestion des erreurs et expiration}
+\begin{enumerate}
+  \setcounter{enumi}{22}
+  \item En cas de token invalide/expiré, le middleware retourne 401 Unauthorized
+  \item Le frontend intercepte l'erreur 401 via les intercepteurs Axios
+  \item Les tokens locaux sont supprimés et l'état utilisateur est réinitialisé
+  \item L'utilisateur est redirigé vers la page de connexion
+  \item Un message d'erreur informe de la nécessité de se reconnecter
+\end{enumerate}
+
+\paragraph{Sécurité implémentée}
+
+\begin{itemize}
+  \item \textbf{Hachage bcrypt} : Les mots de passe ne sont jamais stockés en clair
+  \item \textbf{Signature HMAC} : Les tokens JWT sont signés pour empêcher la falsification
+  \item \textbf{Expiration courte} : Les tokens expirent après 24h maximum
+  \item \textbf{HTTPS obligatoire} : Toutes les communications sont chiffrées
+  \item \textbf{Validation stricte} : Joi valide toutes les entrées utilisateur
+  \item \textbf{Logs d'audit} : Toutes les tentatives de connexion sont enregistrées
+\end{itemize}
+
+\paragraph{Avantages de l'architecture JWT}
+
+Cette approche stateless élimine le besoin de sessions serveur, améliore la scalabilité horizontale et permet une authentification efficace dans une architecture microservices. La séparation claire entre authentification (JWT) et autorisation (RBAC) assure une gestion flexible et sécurisée des accès selon les rôles métier de StageFlow.
 
 \section{Fiabilité et qualité}
 
