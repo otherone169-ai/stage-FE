@@ -50,7 +50,7 @@ const Layout = () => {
             <div className="brand-dot" />
             <div>
               <h1>StageFlow</h1>
-              <p>Internship management</p>
+              <p>Supervision des projets et stagiaires</p>
             </div>
           </div>
 
@@ -78,16 +78,11 @@ const Layout = () => {
 
           <div className="nav-group">
             <div className="nav-group-title">
-              {user?.role === "supervisor" ? "Supervision" : "Internship"}
+              {user?.role === "supervisor" ? "Supervision" : "Espace stagiaire"}
             </div>
             {user?.role === "student" && (
               <NavLink to="/app/student/my-project" onClick={closeMobileMenu}>
                 My project
-              </NavLink>
-            )}
-            {user?.role === "student" && (
-              <NavLink to="/app/student/applications" onClick={closeMobileMenu}>
-                My applications
               </NavLink>
             )}
             {user?.role === "supervisor" && (
@@ -101,15 +96,9 @@ const Layout = () => {
               </NavLink>
             )}
             {user?.role === "supervisor" && (
-              <button
-                className="add-intern-btn"
-                onClick={() => {
-                  closeMobileMenu();
-                  navigate("/app/supervisor/add-intern");
-                }}
-              >
-                Add intern
-              </button>
+              <NavLink to="/app/supervisor/add-intern" onClick={closeMobileMenu}>
+                Stagiaires
+              </NavLink>
             )}
           </div>
 
@@ -142,9 +131,6 @@ const Layout = () => {
               </NavLink>
               <NavLink to="/app/admin/supervisors" onClick={closeMobileMenu}>
                 Supervisors
-              </NavLink>
-              <NavLink to="/app/admin/applications" onClick={closeMobileMenu}>
-                Applications
               </NavLink>
               <NavLink to="/app/admin/analytics" onClick={closeMobileMenu}>
                 Analytics

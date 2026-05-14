@@ -170,12 +170,12 @@ const AdminStudentsPage = () => {
                   <label>Statistiques</label>
                   <div className="stats-grid">
                     <div className="stat-item">
-                      <span className="stat-number">{selectedStudent.applications_count ?? 0}</span>
-                      <span className="stat-label">Candidatures</span>
+                      <span className="stat-number">{selectedStudent.assignments_count ?? 0}</span>
+                      <span className="stat-label">Affectations (total)</span>
                     </div>
                     <div className="stat-item">
-                      <span className="stat-number">{selectedStudent.accepted_applications_count ?? 0}</span>
-                      <span className="stat-label">Acceptées</span>
+                      <span className="stat-number">{selectedStudent.active_assignments_count ?? 0}</span>
+                      <span className="stat-label">Actives / en pause</span>
                     </div>
                   </div>
                 </div>
@@ -221,8 +221,8 @@ const AdminStudentsPage = () => {
                 <th>Phone</th>
                 <th>Education</th>
                 <th>Skills</th>
-                <th>Applications</th>
-                <th>Accepted</th>
+                <th>Assignments</th>
+                <th>Active</th>
                 <th>Profile</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -236,8 +236,8 @@ const AdminStudentsPage = () => {
                   <td>{row.phone || "-"}</td>
                   <td>{row.education || "-"}</td>
                   <td>{row.skills || "-"}</td>
-                  <td>{row.applications_count ?? 0}</td>
-                  <td>{row.accepted_applications_count ?? 0}</td>
+                  <td>{row.assignments_count ?? 0}</td>
+                  <td>{row.active_assignments_count ?? 0}</td>
                   <td>{row.profile_completed ? "completed" : "incomplete"}</td>
                   <td>{row.is_active ? "active" : "inactive"}</td>
                   <td>

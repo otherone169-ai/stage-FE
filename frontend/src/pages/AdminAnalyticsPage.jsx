@@ -11,9 +11,9 @@ const AdminAnalyticsPage = () => {
       supervisors: 0,
       admins: 0
     },
-    internshipStatus: {
-      pending: 0,
+    assignmentStatus: {
       active: 0,
+      paused: 0,
       completed: 0
     }
   });
@@ -25,7 +25,7 @@ const AdminAnalyticsPage = () => {
         setError("");
 
         const { data: usersData } = await apiClient.get("/admin/analytics/users-distribution");
-        const { data: internshipData } = await apiClient.get("/admin/analytics/internship-status");
+        const { data: assignmentData } = await apiClient.get("/admin/analytics/assignment-status");
 
         setAnalytics({
           usersDistribution: usersData || {
@@ -33,9 +33,9 @@ const AdminAnalyticsPage = () => {
             supervisors: 0,
             admins: 0
           },
-          internshipStatus: internshipData || {
-            pending: 0,
+          assignmentStatus: assignmentData || {
             active: 0,
+            paused: 0,
             completed: 0
           }
         });
@@ -203,11 +203,11 @@ const AdminAnalyticsPage = () => {
 
           {/* Internship Status Chart */}
           <PieChart
-            data={analytics.internshipStatus}
-            title="Internship Status Distribution"
+            data={analytics.assignmentStatus}
+            title="Intern assignment status"
             colors={{
-              pending: '#f59e0b',
               active: '#3b82f6',
+              paused: '#f59e0b',
               completed: '#10b981'
             }}
           />

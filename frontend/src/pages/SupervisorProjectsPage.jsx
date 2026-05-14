@@ -5,7 +5,6 @@ import { useAuth } from "../hooks/useAuth";
 import FormField from "../components/FormField";
 
 const buildInitialProjectForm = () => ({
-  internshipId: "",
   title: "",
   description: "",
   objectives: "",
@@ -25,7 +24,6 @@ const SupervisorProjectsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
-  const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [projectForm, setProjectForm] = useState(buildInitialProjectForm());
@@ -46,12 +44,8 @@ const SupervisorProjectsPage = () => {
     try {
       setLoading(true);
       setError("");
-      const [projectsResponse, internshipsResponse] = await Promise.all([
-        client.get("/projects"),
-        client.get("/internships/my")
-      ]);
+      const projectsResponse = await client.get("/projects");
       setProjects(projectsResponse.data || []);
-      setInternships(internshipsResponse.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load projects");
     } finally {
@@ -91,11 +85,6 @@ const SupervisorProjectsPage = () => {
   const handleProjectSubmit = async (event) => {
     event.preventDefault();
 
-    if (!projectForm.internshipId) {
-      setError("Please select an internship first.");
-      return;
-    }
-
     if (!projectForm.title.trim()) {
       setError("Project title is required.");
       return;
@@ -106,7 +95,6 @@ const SupervisorProjectsPage = () => {
       setSuccess("");
 
       const response = await client.post("/projects", {
-        internshipId: projectForm.internshipId,
         title: projectForm.title.trim(),
         description: projectForm.description.trim() || "",
         objectives: projectForm.objectives.trim() || "",
@@ -149,7 +137,7 @@ const SupervisorProjectsPage = () => {
     <div className="page-wrapper">
       <div className="page-header">
         <h1>Project builder</h1>
-        <p className="page-subtitle">Create projects under your internships and prepare the initial task plan.</p>
+        <p className="page-subtitle">Create projects and prepare the initial task plan for your stagiaires.</p>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -166,25 +154,6 @@ const SupervisorProjectsPage = () => {
           <h2>Create a project</h2>
           <form onSubmit={handleProjectSubmit} className="stack-form">
             <div className="form-grid">
-              <div className="form-field">
-                <label htmlFor="internshipId">Internship</label>
-                <select
-                  id="internshipId"
-                  name="internshipId"
-                  value={projectForm.internshipId}
-                  onChange={handleProjectInputChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="">Select an internship</option>
-                  {internships.map((internship) => (
-                    <option key={internship.id} value={internship.id}>
-                      {internship.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <FormField id="title" label="Project title" name="title" value={projectForm.title} onChange={handleProjectInputChange} required />
               <FormField id="description" label="Description" name="description" value={projectForm.description} onChange={handleProjectInputChange} multiline />
               <FormField id="objectives" label="Objectives" name="objectives" value={projectForm.objectives} onChange={handleProjectInputChange} multiline />
@@ -233,7 +202,7 @@ const SupervisorProjectsPage = () => {
         {projects.length === 0 ? (
           <div className="empty-state">
             <h3>No projects yet</h3>
-            <p>Create your first project under one of your internships.</p>
+            <p>Create your first project to assign stagiaires.</p>
           </div>
         ) : (
           projects.map((project) => (
@@ -241,7 +210,6 @@ const SupervisorProjectsPage = () => {
               <div className="project-header">
                 <div>
                   <h3>{project.title}</h3>
-                  <p className="muted-cell">{project.internship_title}</p>
                 </div>
                 <button className="btn btn-danger btn-sm" onClick={() => deleteProject(project.id)}>
                   Delete

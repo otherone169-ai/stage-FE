@@ -291,38 +291,6 @@ export const listMyInterns = async (req, res, next) => {
   }
 };
 
-export const listCompanyInternships = async (req, res, next) => {
-  try {
-    const supervisor = await getSupervisorByUserId(req.user.id);
-    if (!supervisor) {
-      return res.status(404).json({ message: "Supervisor profile not found" });
-    }
-
-    const result = await query(
-      `SELECT
-         id,
-         title,
-         description,
-         location,
-         domain,
-         start_date,
-         end_date,
-         duration_weeks,
-         moderation_status,
-         is_active,
-         created_at
-       FROM internships
-       WHERE supervisor_id = $1
-       ORDER BY created_at DESC`,
-      [supervisor.id]
-    );
-
-    return res.json(result.rows);
-  } catch (error) {
-    return next(error);
-  }
-};
-
 export const getInternDetails = async (req, res, next) => {
   try {
     const supervisor = await getSupervisorByUserId(req.user.id);
@@ -340,13 +308,11 @@ export const getInternDetails = async (req, res, next) => {
          st.education,
          u.email AS student_email,
          p.title AS project_title,
-         p.description AS project_description,
-         intp.title AS internship_title
+         p.description AS project_description
        FROM interns i
        JOIN students st ON st.id = i.student_id
        JOIN users u ON u.id = st.user_id
        JOIN projects p ON p.id = i.project_id
-       JOIN internships intp ON intp.id = p.internship_id
        WHERE i.id = $1 AND i.supervisor_id = $2`,
       [req.params.internId, supervisor.id]
     );

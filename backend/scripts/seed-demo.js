@@ -300,166 +300,19 @@ const insertDemoData = async (client, ids) => {
     ten: student10.rows[0].id
   };
 
-  const internship1 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', false)
-     RETURNING id`,
-    [
-      companies.alpha,
-      "Full-Stack Web Intern",
-      "Developper des fonctionnalites API et React sur un produit SaaS",
-      "Casablanca",
-      "6 months",
-      "Web",
-      "Bonne base JavaScript et SQL",
-      "react,node,postgresql,api"
-    ]
-  );
-
-  const internship2 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', true)
-     RETURNING id`,
-    [
-      companies.alpha,
-      "Data Analyst Intern",
-      "Preparation de dashboards metier et nettoyage de donnees",
-      "Casablanca",
-      "4 months",
-      "Data",
-      "SQL, reporting et data storytelling",
-      "sql,powerbi,python"
-    ]
-  );
-
-  const internship3 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', true)
-     RETURNING id`,
-    [
-      companies.beta,
-      "DevOps Platform Intern",
-      "Automatiser les pipelines CI/CD et observabilite",
-      "Rabat",
-      "6 months",
-      "DevOps",
-      "Docker, Linux, CI/CD",
-      "docker,linux,github-actions"
-    ]
-  );
-
-  const internship4 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'rejected', false)
-     RETURNING id`,
-    [
-      companies.beta,
-      "QA Automation Intern",
-      "Mise en place de tests UI et API",
-      "Rabat",
-      "3 months",
-      "QA",
-      "Playwright ou Cypress, tests API",
-      "testing,cypress,api"
-    ]
-  );
-
-  const internship5 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', true)
-     RETURNING id`,
-    [
-      companies.beta,
-      "Mobile App Intern",
-      "Contribuer a une application mobile interne",
-      "Rabat",
-      "5 months",
-      "Mobile",
-      "React Native basique",
-      "react-native,typescript,api"
-    ]
-  );
-
-  const internship6 = await client.query(
-    `INSERT INTO internships
-      (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', false)
-     RETURNING id`,
-    [
-      companies.beta,
-      "Legacy Backend Migration Intern",
-      "Migration d'une API monolithique vers une architecture modulaire",
-      "Rabat",
-      "6 months",
-      "Backend",
-      "Node.js, SQL, architecture",
-      "node,postgresql,architecture"
-    ]
-  );
-
-  const internships = {
-    webClosed: internship1.rows[0].id,
-    dataOpen: internship2.rows[0].id,
-    devopsPendingModeration: internship3.rows[0].id,
-    qaRejectedModeration: internship4.rows[0].id,
-    mobileOpen: internship5.rows[0].id,
-    backendClosed: internship6.rows[0].id
-  };
-
-  const applicationAccepted = await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'accepted')
-     RETURNING id`,
-    [students.one, internships.webClosed]
-  );
-
-  await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'rejected')`,
-    [students.two, internships.webClosed]
-  );
-
-  const applicationPending = await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'pending')
-     RETURNING id`,
-    [students.three, internships.dataOpen]
-  );
-
-  await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'rejected')`,
-    [students.four, internships.dataOpen]
-  );
-
-  await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'pending')`,
-    [students.two, internships.mobileOpen]
-  );
-
-  const applicationAcceptedHistoric = await client.query(
-    `INSERT INTO applications (student_id, internship_id, status)
-     VALUES ($1, $2, 'accepted')
-     RETURNING id`,
-    [students.four, internships.backendClosed]
-  );
-
   const project1 = await client.query(
-    `INSERT INTO projects (internship_id, supervisor_id, title, description, objectives)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO projects (supervisor_id, title, description, objectives, location, duration, domain, requirements)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
     [
-      internships.webClosed,
       supervisors.alphaEng,
       "E-commerce Platform",
       "Développer les fonctionnalités panier et paiement pour une plateforme e-commerce",
-      "Implémenter un système de panier avec gestion des stocks et intégration paiement Stripe"
+      "Implémenter un système de panier avec gestion des stocks et intégration paiement Stripe",
+      "Casablanca",
+      "6 months",
+      "Web",
+      "React, Node, SQL"
     ]
   );
 
@@ -497,15 +350,18 @@ const insertDemoData = async (client, ids) => {
   );
 
   const project2 = await client.query(
-    `INSERT INTO projects (internship_id, supervisor_id, title, description, objectives)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO projects (supervisor_id, title, description, objectives, location, duration, domain, requirements)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
     [
-      internships.backendClosed,
       supervisors.alphaData,
       "Backend Migration Batch",
       "Refonte progressive de modules API",
-      "Cloturer migration de deux domaines"
+      "Cloturer migration de deux domaines",
+      "Rabat",
+      "6 months",
+      "Backend",
+      "Node.js, SQL, architecture"
     ]
   );
 
@@ -669,22 +525,13 @@ const insertDemoData = async (client, ids) => {
   );
 
   await client.query(
-    `INSERT INTO matches (student_id, internship_id, score)
-     VALUES
-      ($1, $2, 91.50),
-      ($3, $4, 87.20),
-      ($5, $6, 73.00)`,
-    [students.three, internships.dataOpen, students.one, internships.webClosed, students.two, internships.mobileOpen]
-  );
-
-  await client.query(
     `INSERT INTO audit_logs (user_id, action, metadata)
      VALUES
       ($1, 'DEMO_SEED_RUN', '{"source":"seed-demo","version":1}'::jsonb),
       ($2, 'APPLICATION_REVIEWED', '{"result":"accepted"}'::jsonb),
       ($3, 'SUPERVISOR_ASSIGNED', '{"intern":"active"}'::jsonb),
       ($4, 'TASK_UPDATE_SUBMITTED', '{"status":"in_progress"}'::jsonb),
-      ($5, 'INTERNSHIP_MODERATED', '{"status":"pending"}'::jsonb)`,
+      ($5, 'PROJECT_CREATED', '{"title":"Backend Migration"}'::jsonb)`,
     [ids.admin, ids.company1, ids.company1, ids.student1, ids.admin]
   );
 
@@ -701,11 +548,6 @@ const insertDemoData = async (client, ids) => {
   );
 
   return {
-    applications: {
-      accepted: applicationAccepted.rows[0].id,
-      pending: applicationPending.rows[0].id,
-      acceptedHistoric: applicationAcceptedHistoric.rows[0].id
-    },
     resetTokenForDemo: activeResetRawToken
   };
 };
@@ -737,8 +579,7 @@ const run = async () => {
         supervisor: PASSWORDS.supervisor,
         student: PASSWORDS.student
       },
-      sampleResetToken: metadata.resetTokenForDemo,
-      sampleApplicationIds: metadata.applications
+      sampleResetToken: metadata.resetTokenForDemo
     });
   } catch (error) {
     await client.query("ROLLBACK");

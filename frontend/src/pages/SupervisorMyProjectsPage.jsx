@@ -6,7 +6,6 @@ import FormField from "../components/FormField";
 import PageLayout from "../components/PageLayout";
 
 const buildInitialProjectForm = () => ({
-  internshipId: "",
   title: "",
   description: "",
   objectives: "",
@@ -21,7 +20,7 @@ const SupervisorMyProjectsPage = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [students, setStudents] = useState([]);
-  const [internships, setInternships] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [projectForm, setProjectForm] = useState(buildInitialProjectForm());
@@ -41,14 +40,14 @@ const SupervisorMyProjectsPage = () => {
     try {
       setLoading(true);
       setError("");
-      const [projectsResponse, studentsResponse, internshipsResponse] = await Promise.all([
+      const [projectsResponse, studentsResponse, pendingRes] = await Promise.all([
         client.get("/projects"),
         client.get("/supervisors/students"),
-        client.get("/internships/my")
+        client.get("/workflow/supervisors/pending-students")
       ]);
       setProjects(projectsResponse.data || []);
       setStudents(studentsResponse.data || []);
-      setInternships(internshipsResponse.data || []);
+      setPendingCount((pendingRes.data || []).length);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load data");
     } finally {
@@ -64,11 +63,6 @@ const SupervisorMyProjectsPage = () => {
   const handleProjectSubmit = async (event) => {
     event.preventDefault();
 
-    if (!projectForm.internshipId) {
-      setError("Please select an internship first.");
-      return;
-    }
-
     if (!projectForm.title.trim()) {
       setError("Project title is required.");
       return;
@@ -79,7 +73,6 @@ const SupervisorMyProjectsPage = () => {
       setSuccess("");
 
       const response = await client.post("/projects", {
-        internshipId: projectForm.internshipId,
         title: projectForm.title.trim(),
         description: projectForm.description.trim() || "",
         objectives: projectForm.objectives.trim() || "",
@@ -126,7 +119,7 @@ const SupervisorMyProjectsPage = () => {
   return (
     <PageLayout
       title="My projects and interns"
-      subtitle="Monitor the internships you manage and create new project workspaces."
+      subtitle="Manage your projects and stagiaires."
       actions={
         <button className="btn btn-primary" onClick={() => setShowCreateForm((current) => !current)}>
           {showCreateForm ? "Cancel" : "Create a project"}
@@ -139,16 +132,12 @@ const SupervisorMyProjectsPage = () => {
           <div className="stat-card-label">Projects</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{students.filter((student) => !student.assigned_project_id).length}</div>
-          <div className="stat-card-label">Available interns</div>
+          <div className="stat-card-value">{pendingCount}</div>
+          <div className="stat-card-label">Stagiaires en attente</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{students.filter((student) => student.assigned_project_id).length}</div>
-          <div className="stat-card-label">Assigned interns</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-value">{internships.length}</div>
-          <div className="stat-card-label">Internships</div>
+          <div className="stat-card-value">{students.filter((s) => s.assigned_project_id).length}</div>
+          <div className="stat-card-label">Affectés à un projet</div>
         </div>
       </div>
 
@@ -159,7 +148,7 @@ const SupervisorMyProjectsPage = () => {
         {projects.length === 0 ? (
           <div className="empty-state-professional stretched">
             <h3>No projects yet</h3>
-            <p>Create your first project under one of your internships.</p>
+            <p>Create your first project, then assign pending stagiaires.</p>
           </div>
         ) : (
           projects.map((project) => (
@@ -167,7 +156,6 @@ const SupervisorMyProjectsPage = () => {
               <div className="project-card-header">
                 <div>
                   <h3 className="project-card-title">{project.title}</h3>
-                  <p className="muted-cell">{project.internship_title}</p>
                 </div>
               </div>
 
@@ -206,25 +194,6 @@ const SupervisorMyProjectsPage = () => {
             </div>
             <div className="modal-body">
               <form onSubmit={handleProjectSubmit} className="form-grid">
-                <div className="form-field">
-                  <label htmlFor="internshipId">Internship</label>
-                  <select
-                    id="internshipId"
-                    name="internshipId"
-                    value={projectForm.internshipId}
-                    onChange={handleProjectInputChange}
-                    className="form-select"
-                    required
-                  >
-                    <option value="">Select an internship</option>
-                    {internships.map((internship) => (
-                      <option key={internship.id} value={internship.id}>
-                        {internship.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <FormField id="title" label="Project title" name="title" value={projectForm.title} onChange={handleProjectInputChange} required />
                 <FormField id="description" label="Description" name="description" value={projectForm.description} onChange={handleProjectInputChange} multiline />
                 <FormField id="objectives" label="Objectives" name="objectives" value={projectForm.objectives} onChange={handleProjectInputChange} multiline />

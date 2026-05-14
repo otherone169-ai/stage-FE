@@ -40,7 +40,6 @@ const DashboardPage = () => {
   const role = user?.role;
   const summary = stats?.summary || {};
   const tasks = stats?.tasks || {};
-  const applications = stats?.applications || {};
 
   if (role === "supervisor") {
     return (
@@ -64,11 +63,11 @@ const DashboardPage = () => {
       <div className="page-wrapper">
         <div style={{ marginBottom: "24px" }}>
           <h2>Student dashboard</h2>
-          <p className="section-subtitle">Track your applications, internship and daily work.</p>
+          <p className="section-subtitle">Suivez vos projets et vos tâches.</p>
         </div>
         <div className="dashboard-grid">
-          {renderMetricCard("Applications", summary.applications ?? 0, "Apply")}
-          {renderMetricCard("Active internships", summary.activeInternships ?? 0, "Internship")}
+          {renderMetricCard("Projets", summary.projects ?? 0, "Projects")}
+          {renderMetricCard("Missions actives", summary.activePlacements ?? 0, "Stage")}
           {renderMetricCard("Todo tasks", tasks.todo ?? 0, "Todo")}
           {renderMetricCard("Completed tasks", tasks.done ?? 0, "Done")}
         </div>
@@ -84,8 +83,8 @@ const DashboardPage = () => {
       </div>
       <div className="dashboard-grid">
         {renderMetricCard("Users", summary.totalUsers ?? 0, "Users")}
-        {renderMetricCard("Internships", summary.totalInternships ?? 0, "Internships")}
-        {renderMetricCard("Applications", summary.totalApplications ?? 0, "Applications")}
+        {renderMetricCard("Projects", summary.totalProjects ?? 0, "Projects")}
+        {renderMetricCard("Stagiaires (interns)", summary.interns ?? 0, "Users")}
         {renderMetricCard("Reports", summary.totalReports ?? 0, "Reports")}
       </div>
     </div>

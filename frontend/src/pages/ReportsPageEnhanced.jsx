@@ -290,7 +290,7 @@ const ReportsPageEnhanced = () => {
                   <td>
                     <strong>{report.title}</strong>
                   </td>
-                  <td>{report.internship_title || "-"}</td>
+                  <td>{report.project_title || "-"}</td>
                   <td>{getStatusBadge(report.status)}</td>
                   <td>
                     {report.feedback ? (

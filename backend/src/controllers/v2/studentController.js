@@ -87,34 +87,6 @@ export const updateMyProfile = async (req, res, next) => {
   }
 };
 
-export const listMyApplications = async (req, res, next) => {
-  try {
-    const result = await query(
-      `SELECT
-         a.id,
-         a.status,
-         a.applied_at,
-         a.cover_letter,
-         i.id AS internship_id,
-         i.title,
-         i.description,
-         sup.company_name,
-         sup.full_name AS supervisor_name
-       FROM applications a
-       JOIN students st ON st.id = a.student_id
-       JOIN internships i ON i.id = a.internship_id
-       JOIN supervisors sup ON sup.id = i.supervisor_id
-       WHERE st.user_id = $1
-       ORDER BY a.applied_at DESC`,
-      [req.user.id]
-    );
-
-    return res.json(result.rows);
-  } catch (error) {
-    return next(error);
-  }
-};
-
 export const getMyProgress = async (req, res, next) => {
   try {
     const result = await query(
@@ -153,7 +125,7 @@ export const submitTaskUpdate = async (req, res, next) => {
     );
 
     if (internResult.rows.length === 0) {
-      return res.status(403).json({ message: "Task does not belong to your internship" });
+      return res.status(403).json({ message: "Task does not belong to your assigned project" });
     }
 
     const internId = internResult.rows[0].id;

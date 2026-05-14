@@ -1,8 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
-import ApplicationsPage from "./pages/ApplicationsPage";
-import AdminApplicationsPage from "./pages/AdminApplicationsPage";
 import AdminRhCompaniesPage from "./pages/AdminRhCompaniesPage";
 import AdminStudentsPage from "./pages/AdminStudentsPage";
 import CompanyProfilePage from "./pages/CompanyProfilePage";
@@ -75,14 +73,6 @@ const App = () => (
         }
       />
       <Route
-        path="admin/applications"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminApplicationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="admin/profile"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
@@ -95,14 +85,6 @@ const App = () => (
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="student/applications"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <ApplicationsPage />
           </ProtectedRoute>
         }
       />

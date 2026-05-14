@@ -24,7 +24,7 @@ const StudentProgressPage = () => {
     load();
   }, []);
 
-  const internships = useMemo(() => {
+  const placements = useMemo(() => {
     const map = new Map();
 
     rows.forEach((row) => {
@@ -56,7 +56,7 @@ const StudentProgressPage = () => {
   return (
     <div className="page-grid">
       <section className="card">
-        <h3>My Internship Progress</h3>
+        <h3>My project progress</h3>
         {error && <p className="form-error">{error}</p>}
         <div className="table-wrap">
           <table>
@@ -70,15 +70,15 @@ const StudentProgressPage = () => {
               </tr>
             </thead>
             <tbody>
-              {internships.map((internship) => (
-                <tr key={internship.id}>
-                  <td>{internship.projectTitle || "-"}</td>
-                  <td>{internship.status || "-"}</td>
-                  <td>{internship.startDate ? new Date(internship.startDate).toLocaleDateString() : "-"}</td>
-                  <td>{internship.endDate ? new Date(internship.endDate).toLocaleDateString() : "-"}</td>
+              {placements.map((placement) => (
+                <tr key={placement.id}>
+                  <td>{placement.projectTitle || "-"}</td>
+                  <td>{placement.status || "-"}</td>
+                  <td>{placement.startDate ? new Date(placement.startDate).toLocaleDateString() : "-"}</td>
+                  <td>{placement.endDate ? new Date(placement.endDate).toLocaleDateString() : "-"}</td>
                   <td>
-                    {internship.feedback.length > 0
-                      ? internship.feedback.map((item) => item.comment || "-").join(" | ")
+                    {placement.feedback.length > 0
+                      ? placement.feedback.map((item) => item.comment || "-").join(" | ")
                       : "-"}
                   </td>
                 </tr>

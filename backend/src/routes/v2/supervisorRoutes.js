@@ -7,7 +7,6 @@ import {
   getMyProfile,
   updateMyProfile,
   listMyInterns,
-  listCompanyInternships,
   getInternDetails,
   addInternFeedback,
   updateInternStatus
@@ -28,7 +27,6 @@ router.patch("/profile/me", authenticate, authorize("supervisor"), validate(upda
 
 router.get("/interns/list", authenticate, authorize("supervisor"), listMyInterns);
 router.get("/students", authenticate, authorize("supervisor"), listStudents);
-router.get("/internships/list", authenticate, authorize("supervisor"), listCompanyInternships);
 router.get("/interns/:internId", authenticate, authorize("supervisor"), getInternDetails);
 router.patch(
   "/interns/:internId/status",

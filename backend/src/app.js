@@ -3,10 +3,8 @@ import dotenv from "dotenv";
 import express from "express";
 
 import adminRoutes from "./routes/v2/adminRoutes.js";
-import applicationRoutes from "./routes/v2/applicationRoutes.js";
 import authRoutes from "./routes/v2/authRoutes.js";
 import dashboardRoutes from "./routes/v2/dashboardRoutes.js";
-import internshipRoutes from "./routes/v2/internshipRoutes.js";
 import fileRoutes from "./routes/v2/fileRoutes.js";
 import studentRoutes from "./routes/v2/studentRoutes.js";
 import supervisorRoutes from "./routes/v2/supervisorRoutes.js";
@@ -81,8 +79,6 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/supervisors", supervisorRoutes);
-app.use("/api/internships", internshipRoutes);
-app.use("/api/applications", applicationRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/reports", reportRoutes);

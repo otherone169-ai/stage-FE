@@ -125,7 +125,7 @@ const InternsPage = () => {
           <h3>{selectedIntern.full_name}</h3>
           <p>{selectedIntern.student_email}</p>
           <p>
-            {selectedIntern.internship_title} - {selectedIntern.project_title}
+            {selectedIntern.project_title}
           </p>
 
           <form className="stack-form" onSubmit={submitFeedback}>

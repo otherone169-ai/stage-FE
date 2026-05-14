@@ -8,24 +8,17 @@ const formatTasks = (tasks) => ({
   progress: Number(tasks.total || 0) > 0 ? Math.round((Number(tasks.done || 0) / Number(tasks.total || 0)) * 100) : 0
 });
 
-const zeroApplications = {
-  pending: 0,
-  accepted: 0,
-  rejected: 0
-};
-
 export const getDashboard = async (req, res, next) => {
   try {
     if (req.user.role === "admin") {
-      const [globalCounts, taskBreakdown, appBreakdown, reportCounts, supervisorsByCompany] = await Promise.all([
+      const [globalCounts, taskBreakdown, reportCounts, supervisorsByCompany] = await Promise.all([
         query(
           `SELECT
              (SELECT COUNT(*)::int FROM users) AS total_users,
              (SELECT COUNT(*)::int FROM users WHERE role = 'student') AS total_students,
              (SELECT COUNT(*)::int FROM supervisors) AS total_supervisors,
              (SELECT COUNT(DISTINCT company_name)::int FROM supervisors) AS total_companies,
-             (SELECT COUNT(*)::int FROM internships WHERE is_active = true) AS total_internships,
-             (SELECT COUNT(*)::int FROM applications) AS total_applications,
+             (SELECT COUNT(*)::int FROM projects) AS total_projects,
              (SELECT COUNT(*)::int FROM interns) AS total_interns,
              (SELECT COUNT(*)::int FROM reports) AS total_reports`
         ),
@@ -36,13 +29,6 @@ export const getDashboard = async (req, res, next) => {
              COUNT(*) FILTER (WHERE status = 'in_progress')::int AS in_progress,
              COUNT(*) FILTER (WHERE status = 'done')::int AS done
            FROM tasks`
-        ),
-        query(
-          `SELECT
-             COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
-             COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted,
-             COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected
-           FROM applications`
         ),
         query(
           `SELECT
@@ -67,17 +53,14 @@ export const getDashboard = async (req, res, next) => {
           students: totals.total_students,
           supervisors: totals.total_supervisors,
           companies: totals.total_companies,
-          internships: totals.total_internships,
-          applications: totals.total_applications,
+          projects: totals.total_projects,
           interns: totals.total_interns,
           reports: totals.total_reports,
           totalUsers: totals.total_users,
-          totalInternships: totals.total_internships,
-          totalApplications: totals.total_applications,
+          totalProjects: totals.total_projects,
           totalReports: totals.total_reports
         },
         tasks: formatTasks(taskBreakdown.rows[0]),
-        applications: appBreakdown.rows[0],
         reports: reportCounts.rows[0],
         supervisorsByCompany: supervisorsByCompany.rows
       });
@@ -111,14 +94,12 @@ export const getDashboard = async (req, res, next) => {
              COUNT(DISTINCT inr.id) FILTER (WHERE inr.status = 'terminated')::int AS terminated_interns,
              COUNT(DISTINCT inr.student_id)::int AS students,
              COUNT(DISTINCT p.id)::int AS projects,
-             COUNT(DISTINCT i.id)::int AS internships,
              COUNT(DISTINCT r.id)::int AS reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'submitted')::int AS pending_reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'validated')::int AS validated_reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'rejected')::int AS rejected_reports
            FROM supervisors s
            LEFT JOIN projects p ON p.supervisor_id = s.id
-           LEFT JOIN internships i ON i.supervisor_id = s.id
            LEFT JOIN interns inr ON inr.supervisor_id = s.id
            LEFT JOIN reports r ON r.project_id = p.id
            WHERE s.id = $1`,
@@ -132,17 +113,13 @@ export const getDashboard = async (req, res, next) => {
         scope: "supervisor",
         summary: {
           students: scopedSummary.students,
-          internships: scopedSummary.internships,
-          applications: 0,
           interns: scopedSummary.interns,
-          activeInternships: scopedSummary.active_interns,
           activeInterns: scopedSummary.active_interns,
           projects: scopedSummary.projects,
           reports: scopedSummary.reports,
           pendingReports: scopedSummary.pending_reports
         },
         tasks: formatTasks(tasks.rows[0]),
-        applications: zeroApplications,
         reports: {
           submitted: scopedSummary.pending_reports,
           validated: scopedSummary.validated_reports,
@@ -164,7 +141,7 @@ export const getDashboard = async (req, res, next) => {
       }
 
       const studentId = student.rows[0].id;
-      const [tasks, applications, summary] = await Promise.all([
+      const [tasks, summary] = await Promise.all([
         query(
           `SELECT
              COUNT(DISTINCT t.id)::int AS total,
@@ -179,19 +156,9 @@ export const getDashboard = async (req, res, next) => {
         ),
         query(
           `SELECT
-             COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
-             COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted,
-             COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected
-           FROM applications
-           WHERE student_id = $1`,
-          [studentId]
-        ),
-        query(
-          `SELECT
              COUNT(DISTINCT inr.id)::int AS interns,
-             COUNT(DISTINCT inr.id) FILTER (WHERE inr.status = 'active')::int AS active_internships,
+             COUNT(DISTINCT inr.id) FILTER (WHERE inr.status = 'active')::int AS active_placements,
              COUNT(DISTINCT p.id)::int AS projects,
-             COUNT(DISTINCT i.id)::int AS internships,
              COUNT(DISTINCT r.id)::int AS reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'draft')::int AS draft_reports,
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'submitted')::int AS submitted_reports,
@@ -199,29 +166,24 @@ export const getDashboard = async (req, res, next) => {
              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'rejected')::int AS rejected_reports
            FROM interns inr
            LEFT JOIN projects p ON p.id = inr.project_id
-           LEFT JOIN internships i ON i.id = p.internship_id
            LEFT JOIN reports r ON r.intern_id = inr.id
            WHERE inr.student_id = $1`,
           [studentId]
         )
       ]);
 
-      const app = applications.rows[0];
       const scopedSummary = summary.rows[0];
 
       return res.json({
         scope: "student",
         summary: {
-          internships: scopedSummary.internships,
-          activeInternships: scopedSummary.active_internships,
-          applications: Number(app.pending || 0) + Number(app.accepted || 0) + Number(app.rejected || 0),
           interns: scopedSummary.interns,
+          activePlacements: scopedSummary.active_placements,
           projects: scopedSummary.projects,
           reports: scopedSummary.reports,
           profileCompleted: Boolean(student.rows[0].profile_completed)
         },
         tasks: formatTasks(tasks.rows[0]),
-        applications: app,
         reports: {
           draft: scopedSummary.draft_reports,
           submitted: scopedSummary.submitted_reports,

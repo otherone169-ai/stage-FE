@@ -244,7 +244,7 @@ const ReportsPage = () => {
               {reports.map((report) => (
                 <tr key={report.id}>
                   <td>{report.title}</td>
-                  <td>{report.internship_title || "-"}</td>
+                  <td>{report.project_title || "-"}</td>
                   <td>{report.status}</td>
                   <td>{report.feedback || "-"}</td>
                   <td>

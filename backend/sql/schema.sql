@@ -1,4 +1,5 @@
--- Internship platform schema (SIMPLIFIED VERSION)
+-- Stage / stagiaire platform schema (no internship offers: projects belong to supervisors only).
+-- Apply migrations through `007_remove_internships.sql` on existing databases.
 -- Features: Multi-interns per project, Task updates tracking, No companies table
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -15,10 +16,11 @@ DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS reports CASCADE;
 DROP TABLE IF EXISTS interns CASCADE;
 DROP TABLE IF EXISTS applications CASCADE;
+DROP TABLE IF EXISTS matches CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS internships CASCADE;
-DROP TABLE IF EXISTS supervisors CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS supervisors CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS email_verification_tokens CASCADE;
 DROP TABLE IF EXISTS password_reset_tokens CASCADE;
@@ -97,36 +99,12 @@ CREATE TABLE students (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- ================= INTERNSHIP MANAGEMENT =================
+-- ================= PROJECTS (supervisor-owned) =================
 
--- INTERNSHIPS TABLE (Job offers)
-CREATE TABLE internships (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  supervisor_id UUID NOT NULL REFERENCES supervisors(id) ON DELETE CASCADE,
-  
-  title VARCHAR(180) NOT NULL,
-  description TEXT,
-  location VARCHAR(140),
-  domain VARCHAR(120),
-  
-  start_date DATE,
-  end_date DATE,
-  duration_weeks INTEGER CHECK (duration_weeks > 0),
-  
-  moderation_status VARCHAR(20) DEFAULT 'approved'
-    CHECK (moderation_status IN ('pending','approved','rejected')),
-  
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- PROJECTS TABLE (Concrete projects for assigned students)
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  internship_id UUID NOT NULL REFERENCES internships(id) ON DELETE CASCADE,
   supervisor_id UUID NOT NULL REFERENCES supervisors(id) ON DELETE CASCADE,
-  
+
   title VARCHAR(180) NOT NULL,
   description TEXT,
   objectives TEXT,
@@ -134,7 +112,7 @@ CREATE TABLE projects (
   duration VARCHAR(80),
   domain VARCHAR(120),
   requirements TEXT,
-  
+
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -156,25 +134,6 @@ CREATE TABLE interns (
   updated_at TIMESTAMP DEFAULT NOW(),
   
   UNIQUE(student_id, project_id)
-);
-
--- APPLICATIONS TABLE (Student applications to internships)
-CREATE TABLE applications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-  internship_id UUID NOT NULL REFERENCES internships(id) ON DELETE CASCADE,
-  
-  status VARCHAR(20) DEFAULT 'pending'
-    CHECK (status IN ('pending','accepted','rejected','withdrawn')),
-  
-  cover_letter TEXT,
-  applied_at TIMESTAMP DEFAULT NOW(),
-  reviewed_at TIMESTAMP,
-  reviewed_by_supervisor_id UUID REFERENCES supervisors(id) ON DELETE SET NULL,
-  reviewer_notes TEXT,
-  updated_at TIMESTAMP DEFAULT NOW(),
-  
-  UNIQUE(student_id, internship_id)
 );
 
 -- ================= TASK MANAGEMENT =================
@@ -318,13 +277,7 @@ CREATE INDEX idx_supervisors_company_name ON supervisors(company_name);
 CREATE INDEX idx_students_user_id ON students(user_id);
 CREATE INDEX idx_students_created_by ON students(created_by_supervisor_id);
 
--- Internships indexes
-CREATE INDEX idx_internships_supervisor_id ON internships(supervisor_id);
-CREATE INDEX idx_internships_moderation_status ON internships(moderation_status);
-CREATE INDEX idx_internships_is_active ON internships(is_active);
-
 -- Projects indexes
-CREATE INDEX idx_projects_internship_id ON projects(internship_id);
 CREATE INDEX idx_projects_supervisor_id ON projects(supervisor_id);
 
 -- Interns indexes (Multi-interns per project)
@@ -334,11 +287,6 @@ CREATE INDEX idx_interns_supervisor_id ON interns(supervisor_id);
 CREATE INDEX idx_interns_status ON interns(status);
 -- Important: Index for finding all interns in a project
 CREATE INDEX idx_interns_project_status ON interns(project_id, status);
-
--- Applications indexes
-CREATE INDEX idx_applications_student_id ON applications(student_id);
-CREATE INDEX idx_applications_internship_id ON applications(internship_id);
-CREATE INDEX idx_applications_status ON applications(status);
 
 -- Tasks indexes
 CREATE INDEX idx_tasks_project_id ON tasks(project_id);
@@ -396,10 +344,8 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_supervisors_updated_at BEFORE UPDATE ON supervisors FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_internships_updated_at BEFORE UPDATE ON internships FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_interns_updated_at BEFORE UPDATE ON interns FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_task_updates_updated_at BEFORE UPDATE ON task_updates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_task_remarks_updated_at BEFORE UPDATE ON task_remarks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

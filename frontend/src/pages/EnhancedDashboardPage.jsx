@@ -51,7 +51,7 @@ const EnhancedDashboardPage = () => {
   if (user?.role === "supervisor") {
     const studentStats = stats?.studentStats || {};
     const projectStats = stats?.projectStats || [];
-    const internships = stats?.internships || [];
+    const projectsProgress = stats?.projects || [];
 
     return (
       <div className="page-wrapper">
@@ -89,17 +89,17 @@ const EnhancedDashboardPage = () => {
         </section>
 
         <section className="card" style={{ marginTop: "24px" }}>
-          <h3>Internships</h3>
-          {internships.length === 0 ? (
-            <p>No internships yet.</p>
+          <h3>Project timelines</h3>
+          {projectsProgress.length === 0 ? (
+            <p>No projects yet.</p>
           ) : (
             <div style={{ display: "grid", gap: "16px" }}>
-              {internships.map((internship) => (
-                <div key={internship.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
-                  <h4>{internship.title}</h4>
-                  <p>{internship.total_students} interns, {internship.active_students} active</p>
-                  <p>{internship.progressPercent}% progress</p>
-                  <p>{internship.daysRemaining ?? "-"} days remaining</p>
+              {projectsProgress.map((project) => (
+                <div key={project.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
+                  <h4>{project.title}</h4>
+                  <p>{project.total_students} interns, {project.active_students} active</p>
+                  <p>{project.progressPercent}% progress</p>
+                  <p>{project.daysRemaining ?? "-"} days remaining</p>
                 </div>
               ))}
             </div>
@@ -110,7 +110,7 @@ const EnhancedDashboardPage = () => {
   }
 
   if (user?.role === "student") {
-    const internships = stats?.internships || [];
+    const projects = stats?.projects || [];
     const taskStats = stats?.taskStats || {};
 
     return (
@@ -125,18 +125,18 @@ const EnhancedDashboardPage = () => {
         </div>
 
         <section className="card" style={{ marginTop: "24px" }}>
-          <h3>My internships</h3>
-          {internships.length === 0 ? (
-            <p>No internship assigned yet.</p>
+          <h3>My projects</h3>
+          {projects.length === 0 ? (
+            <p>No project assigned yet.</p>
           ) : (
             <div style={{ display: "grid", gap: "16px" }}>
-              {internships.map((internship) => (
-                <div key={internship.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
-                  <h4>{internship.project_title}</h4>
-                  <p>Supervisor: {internship.supervisor_name}</p>
-                  <p>Status: {internship.status}</p>
-                  <p>{internship.progressPercent}% progress</p>
-                  <p>{internship.daysRemaining ?? "-"} days remaining</p>
+              {projects.map((placement) => (
+                <div key={placement.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
+                  <h4>{placement.project_title}</h4>
+                  <p>Supervisor: {placement.supervisor_name}</p>
+                  <p>Status: {placement.status}</p>
+                  <p>{placement.progressPercent}% progress</p>
+                  <p>{placement.daysRemaining ?? "-"} days remaining</p>
                 </div>
               ))}
             </div>
@@ -158,7 +158,7 @@ const EnhancedDashboardPage = () => {
         <div className="metric-card"><strong>{globalStats.total_users ?? 0}</strong><p>Users</p></div>
         <div className="metric-card"><strong>{globalStats.total_students ?? 0}</strong><p>Students</p></div>
         <div className="metric-card"><strong>{globalStats.total_supervisors ?? 0}</strong><p>Supervisors</p></div>
-        <div className="metric-card"><strong>{globalStats.total_interns ?? 0}</strong><p>Active internships</p></div>
+        <div className="metric-card"><strong>{globalStats.total_projects ?? 0}</strong><p>Projects</p></div>
       </div>
 
       <section className="card" style={{ marginTop: "24px" }}>

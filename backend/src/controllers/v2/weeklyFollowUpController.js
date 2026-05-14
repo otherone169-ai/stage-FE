@@ -88,29 +88,27 @@ export const submitWeeklyFollowUp = async (req, res, next) => {
 export const getSupervisorFollowUps = async (req, res, next) => {
   try {
     const { id: userId } = req.user;
-    const { internshipId } = req.params;
+    const { projectId } = req.params;
 
-    const supervisor = await query(
-      `SELECT id FROM supervisors WHERE user_id = $1`,
-      [userId]
-    );
+    const supervisor = await query(`SELECT id FROM supervisors WHERE user_id = $1`, [userId]);
 
     if (!supervisor.rows.length) {
       return res.status(403).json({ error: "Not authorized as supervisor" });
     }
 
     const followUps = await query(
-      `SELECT 
+      `SELECT
         wfu.id, wfu.week_number, wfu.commit_hash, wfu.tasks_summary, wfu.challenges,
-        wfu.submitted_at, s.full_name, s.email,
-        i.id as intern_id
+        wfu.submitted_at, s.full_name, u.email,
+        i.id AS intern_id
        FROM weekly_follow_ups wfu
        JOIN interns i ON wfu.intern_id = i.id
        JOIN students s ON i.student_id = s.id
+       JOIN users u ON u.id = s.user_id
        JOIN projects p ON i.project_id = p.id
-       WHERE p.internship_id = $1 AND i.supervisor_id = $2
+       WHERE p.id = $1 AND p.supervisor_id = $2 AND i.supervisor_id = $2
        ORDER BY wfu.submitted_at DESC`,
-      [internshipId, supervisor.rows[0].id]
+      [projectId, supervisor.rows[0].id]
     );
 
     res.json(followUps.rows);

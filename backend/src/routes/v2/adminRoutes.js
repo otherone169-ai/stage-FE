@@ -1,9 +1,8 @@
 import express from "express";
 import {
   deleteUser,
-  getInternshipStatusDistribution,
+  getAssignmentStatusDistribution,
   getUsersDistribution,
-  listApplications,
   listCompanyRhProfiles,
   listStudentProfiles,
   listSupervisors,
@@ -21,11 +20,10 @@ router.use(authenticate, authorize("admin"));
 router.get("/users", listUsers);
 router.patch("/users/:userId/status", validate(suspendUserSchema), suspendUser);
 router.delete("/users/:userId", deleteUser);
-router.get("/applications", listApplications);
 router.get("/companies-rh", listCompanyRhProfiles);
 router.get("/students", listStudentProfiles);
 router.get("/supervisors", listSupervisors);
 router.get("/analytics/users-distribution", getUsersDistribution);
-router.get("/analytics/internship-status", getInternshipStatusDistribution);
+router.get("/analytics/assignment-status", getAssignmentStatusDistribution);
 
 export default router;

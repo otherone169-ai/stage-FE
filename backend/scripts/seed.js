@@ -75,19 +75,18 @@ const run = async () => {
       [studentUser.rows[0].id, supervisor.rows[0].id]
     );
 
-    const internship = await client.query(
-      `INSERT INTO internships
-       (company_id, title, description, location, duration, domain, requirements, required_skills, moderation_status, is_active)
-       VALUES ($1, 'Full-stack Intern', 'Build web features', 'Casablanca', '6 months', 'Web', 'React and Node basics', 'react,node,sql', 'approved', true)
+    const demoProject = await client.query(
+      `INSERT INTO projects (supervisor_id, title, description, objectives)
+       VALUES ($1, 'Full-stack stage', 'Build web features', 'Deliver MVP')
        RETURNING id`,
-      [company.rows[0].id]
+      [supervisor.rows[0].id]
     );
 
     await client.query(
-      `INSERT INTO applications (student_id, internship_id, status)
-       VALUES ($1, $2, 'pending')
-       ON CONFLICT (student_id, internship_id) DO NOTHING`,
-      [student.rows[0].id, internship.rows[0].id]
+      `INSERT INTO interns (student_id, project_id, supervisor_id, status)
+       VALUES ($1, $2, $3, 'active')
+       ON CONFLICT (student_id, project_id) DO NOTHING`,
+      [student.rows[0].id, demoProject.rows[0].id, supervisor.rows[0].id]
     );
 
     await client.query("COMMIT");

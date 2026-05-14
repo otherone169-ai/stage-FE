@@ -64,7 +64,6 @@ const AdminRhCompaniesPage = () => {
                 <th>Location</th>
                 <th>Website</th>
                 <th>Supervisors</th>
-                <th>Internships</th>
                 <th>Projects</th>
               </tr>
             </thead>
@@ -75,13 +74,12 @@ const AdminRhCompaniesPage = () => {
                   <td>{row.company_location || "-"}</td>
                   <td>{row.company_website || "-"}</td>
                   <td>{row.supervisors_count ?? 0}</td>
-                  <td>{row.internships_count ?? 0}</td>
                   <td>{row.projects_count ?? 0}</td>
                 </tr>
               ))}
               {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={6}>No companies match the current filter.</td>
+                  <td colSpan={5}>No companies match the current filter.</td>
                 </tr>
               )}
             </tbody>

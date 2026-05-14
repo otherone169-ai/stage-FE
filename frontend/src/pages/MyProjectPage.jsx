@@ -89,7 +89,7 @@ const MyProjectPage = () => {
         <div>
           <p className="section-kicker">📌 Mon Projet</p>
           <h2>{project.title}</h2>
-          <p className="section-subtitle">{project.internship_title}</p>
+          <p className="section-subtitle">{project.description || project.title}</p>
         </div>
         <div
           style={{
