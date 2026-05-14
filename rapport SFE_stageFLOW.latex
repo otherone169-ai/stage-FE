@@ -14,8 +14,20 @@
 
 \begin{document}
 
+% Numérotation des pages en chiffres arabes uniquement (pas de chiffres romains)
+\pagenumbering{arabic}
+
 \begin{titlepage}
 \thispagestyle{empty}
+\vspace*{-0.7cm}
+% En-têtes avec logos (EST relevé légèrement)
+\begin{tabular}{p{5.2cm}p{5.6cm}p{4.5cm}}
+  \centering\includegraphics[width=5.2cm]{screen/EST agadir.png} & & \centering\includegraphics[width=4.5cm]{screen/valaLogo.png}
+\end{tabular}
+
+\vspace{1.5cm}
+
+% Corps du titre
 \begin{center}
 \large Université Ibn Zohr\\
 École Supérieure de Technologie – Agadir\\
@@ -36,8 +48,9 @@ et d'encadrement des stagiaires\\
 
 \begin{center}
 \textbf{Réalisé par :} Reda Bouzid\\
-\textbf{Date de soutenance :} 28/05/2026\\
-\textbf{Encadrant :} Neuman Charhbili
+\textbf{Date de soutenance :} \\
+\textbf{Encadrant du stage :} Neuman Charhbili\\
+\textbf{Encadrant académique :} Prof El Hassan BEN-AHMED
 \end{center}
 \end{titlepage}
 
@@ -431,14 +444,14 @@ stage.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/ajoutStagiaresequencediagram.PNG}
-  \caption{Figure IV.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
+  \caption{Figure 4.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}
   \label{fig:seq-compte}
 \end{figure}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.9\textwidth]{screen/diagramactivitesuravancementetsuivi.jpg}
-  \caption{Figure IV.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
+  \caption{Figure 4.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}
   \label{fig:activite-suivi}
 \end{figure}
 
@@ -549,7 +562,7 @@ Le système d'authentification JWT de StageFlow repose sur un flux stateless où
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.95\textwidth]{screen/JWTsequenceDiagram.PNG}
-  \caption{Figure IV.3 :: Diagramme de séquence du flux d'authentification JWT}
+  \caption{Figure 4.3 :: Diagramme de séquence du flux d'authentification JWT}
   \label{fig:jwt-sequence}
 \end{figure}
 

@@ -6,12 +6,12 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Diagramme des cas d'utilisation : interactions entre Administrateur, Superviseur et Étudiant}}{14}{}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Figure IV.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}}{16}{}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Figure IV.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}}{17}{}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Figure 4.1 :: Diagramme de séquence : création du compte étudiant et suivi de stage}}{16}{}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Figure 4.2 :: Diagramme d'activités : avancement et suivi des tâches entre étudiant et superviseur}}{17}{}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {5.1}{\ignorespaces Diagramme de classes UML : entités principales et relations du modèle de données}}{19}{}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Figure IV.3 :: Diagramme de séquence du flux d'authentification JWT}}{22}{}%
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Figure 4.3 :: Diagramme de séquence du flux d'authentification JWT}}{22}{}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {7.1}{\ignorespaces Authentification — Écran de connexion (image fournie ultérieurement)}}{24}{}%
 \contentsline {figure}{\numberline {7.2}{\ignorespaces Tableau de bord Administrateur (image fournie ultérieurement)}}{25}{}%

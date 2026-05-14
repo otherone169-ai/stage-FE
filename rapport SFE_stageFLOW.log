@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.3.19)  14 MAY 2026 14:59
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.3.19)  14 MAY 2026 16:52
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -229,23 +229,38 @@ File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 24.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 24.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 24.
+<screen/EST agadir.png, id=1, 293.59688pt x 84.315pt>
+File: screen/EST agadir.png Graphic file (type png)
+<use screen/EST agadir.png>
+Package pdftex.def Info: screen/EST agadir.png  used on input line 25.
+(pdftex.def)             Requested size: 147.95424pt x 42.4893pt.
+<screen/valaLogo.png, id=3, 225.84375pt x 225.84375pt>
+File: screen/valaLogo.png Graphic file (type png)
+<use screen/valaLogo.png>
+Package pdftex.def Info: screen/valaLogo.png  used on input line 25.
+(pdftex.def)             Requested size: 128.0374pt x 128.04305pt.
+
+Overfull \hbox (33.08313pt too wide) in paragraph at lines 24--27
+[][] 
+ []
+
 [1
 
-{C:/Users/dev/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
-(rapport SFE_stageFLOW.toc
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <10.95> on input line 6.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 6.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 6.
- [1
+{C:/Users/dev/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./screen/EST a
+gadir.png> <./screen/valaLogo.png>] (rapport SFE_stageFLOW.toc [1
 
 ])
 \tf@toc=\write3
 \openout3 = `"rapport SFE_stageFLOW.toc"'.
 
- [2] (rapport SFE_stageFLOW.lof)
+ [2]
+(rapport SFE_stageFLOW.lof)
 \tf@lof=\write4
 \openout4 = `"rapport SFE_stageFLOW.lof"'.
 
@@ -254,27 +269,25 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 ] [4
 
 
-]
-[5
+] [5
 
 
 ] [6
 
 ]
 Chapitre 1.
-<screen/valaLogo.png, id=29, 225.84375pt x 225.84375pt>
 File: screen/valaLogo.png Graphic file (type png)
 <use screen/valaLogo.png>
-Package pdftex.def Info: screen/valaLogo.png  used on input line 129.
+Package pdftex.def Info: screen/valaLogo.png  used on input line 142.
 (pdftex.def)             Requested size: 113.81102pt x 113.81412pt.
 [7
 
- <./screen/valaLogo.png>]
-<screen/organigrameOrganisation.PNG, id=37, 828.84656pt x 478.03593pt>
+]
+<screen/organigrameOrganisation.PNG, id=40, 828.84656pt x 478.03593pt>
 File: screen/organigrameOrganisation.PNG Graphic file (type png)
 <use screen/organigrameOrganisation.PNG>
 Package pdftex.def Info: screen/organigrameOrganisation.PNG  used on input line
- 207.
+ 220.
 (pdftex.def)             Requested size: 409.71692pt x 236.29663pt.
  [8] [9 <./screen/organigrameOrganisation.PNG>]
 Chapitre 2.
@@ -285,40 +298,40 @@ Chapitre 3.
 [12
 
 ]
-<screen/UseCaseDiagram.jpg, id=58, 1244.65pt x 1089.06876pt>
+<screen/UseCaseDiagram.jpg, id=60, 1244.65pt x 1089.06876pt>
 File: screen/UseCaseDiagram.jpg Graphic file (type jpg)
 <use screen/UseCaseDiagram.jpg>
-Package pdftex.def Info: screen/UseCaseDiagram.jpg  used on input line 387.
+Package pdftex.def Info: screen/UseCaseDiagram.jpg  used on input line 400.
 (pdftex.def)             Requested size: 409.71692pt x 358.49643pt.
  [13] [14 <./screen/UseCaseDiagram.jpg>]
 Chapitre 4.
-<screen/ajoutStagiaresequencediagram.PNG, id=65, 447.17062pt x 438.8897pt>
+<screen/ajoutStagiaresequencediagram.PNG, id=67, 447.17062pt x 438.8897pt>
 File: screen/ajoutStagiaresequencediagram.PNG Graphic file (type png)
 <use screen/ajoutStagiaresequencediagram.PNG>
 Package pdftex.def Info: screen/ajoutStagiaresequencediagram.PNG  used on input
- line 433.
+ line 446.
 (pdftex.def)             Requested size: 409.71692pt x 402.13599pt.
-<screen/diagramactivitesuravancementetsuivi.jpg, id=66, 824.07875pt x 1150.2975
+<screen/diagramactivitesuravancementetsuivi.jpg, id=68, 824.07875pt x 1150.2975
 pt>
 File: screen/diagramactivitesuravancementetsuivi.jpg Graphic file (type jpg)
 <use screen/diagramactivitesuravancementetsuivi.jpg>
 Package pdftex.def Info: screen/diagramactivitesuravancementetsuivi.jpg  used o
-n input line 440.
+n input line 453.
 (pdftex.def)             Requested size: 409.71692pt x 571.9002pt.
 [15
 
 ] [16 <./screen/ajoutStagiaresequencediagram.PNG>] [17 <./screen/diagramactivit
 esuravancementetsuivi.jpg>]
 Chapitre 5.
-<screen/UMLClass1.png, id=77, 482.55281pt x 466.74374pt>
+<screen/UMLClass1.png, id=79, 482.55281pt x 466.74374pt>
 File: screen/UMLClass1.png Graphic file (type png)
 <use screen/UMLClass1.png>
-Package pdftex.def Info: screen/UMLClass1.png  used on input line 459.
+Package pdftex.def Info: screen/UMLClass1.png  used on input line 472.
 (pdftex.def)             Requested size: 409.71692pt x 396.30673pt.
 [18
 
 ]
-Overfull \hbox (18.4458pt too wide) in paragraph at lines 485--486
+Overfull \hbox (18.4458pt too wide) in paragraph at lines 498--499
 []\T1/cmr/bx/n/10.95 Entités UML \TS1/cmr/bx/n/10.95 ^^Y \T1/cmr/bx/n/10.95 Tab
 les Post-greSQL \T1/cmr/m/n/10.95 : Les classes \T1/cmtt/m/n/10.95 Utilisateur\
 T1/cmr/m/n/10.95 , \T1/cmtt/m/n/10.95 Stagiaire\T1/cmr/m/n/10.95 , \T1/cmtt/m/n
@@ -330,10 +343,10 @@ Chapitre 6.
 [21
 
 ]
-<screen/JWTsequenceDiagram.PNG, id=94, 421.575pt x 472.01344pt>
+<screen/JWTsequenceDiagram.PNG, id=96, 421.575pt x 472.01344pt>
 File: screen/JWTsequenceDiagram.PNG Graphic file (type png)
 <use screen/JWTsequenceDiagram.PNG>
-Package pdftex.def Info: screen/JWTsequenceDiagram.PNG  used on input line 551.
+Package pdftex.def Info: screen/JWTsequenceDiagram.PNG  used on input line 564.
 
 (pdftex.def)             Requested size: 432.48051pt x 484.23463pt.
  [22 <./screen/JWTsequenceDiagram.PNG>] [23]
@@ -341,59 +354,59 @@ Chapitre 7.
 [24
 
 ]
-Overfull \hbox (0.4714pt too wide) in paragraph at lines 647--649
+Overfull \hbox (0.4714pt too wide) in paragraph at lines 660--662
  \T1/cmr/bx/n/10.95 Des-crip-tion fonc-tion-nelle[] \T1/cmr/m/n/10.95 In-ter-fa
 ce lis-tant les sta-giaires, per-met-tant la créa-tion/modification
  []
 
 [25] [26]
-Overfull \hbox (11.7815pt too wide) in paragraph at lines 707--709
+Overfull \hbox (11.7815pt too wide) in paragraph at lines 720--722
  \T1/cmr/bx/n/10.95 Des-crip-tion fonc-tion-nelle[] \T1/cmr/m/n/10.95 Ta-bleau 
 de bord per-son-nel de l'étu-diant : tâches as-si-gnées, échéances,
  []
 
 [27] [28]
 Chapitre 8.
-<screen/git.png, id=118, 349.305pt x 145.54375pt>
+<screen/git.png, id=120, 349.305pt x 145.54375pt>
 File: screen/git.png Graphic file (type png)
 <use screen/git.png>
-Package pdftex.def Info: screen/git.png  used on input line 752.
+Package pdftex.def Info: screen/git.png  used on input line 765.
 (pdftex.def)             Requested size: 145.68144pt x 60.70155pt.
-<screen/nodeJs.png, id=119, 288.07625pt x 175.65625pt>
+<screen/nodeJs.png, id=121, 288.07625pt x 175.65625pt>
 File: screen/nodeJs.png Graphic file (type png)
 <use screen/nodeJs.png>
-Package pdftex.def Info: screen/nodeJs.png  used on input line 768.
+Package pdftex.def Info: screen/nodeJs.png  used on input line 781.
 (pdftex.def)             Requested size: 145.68144pt x 88.83301pt.
-<screen/expressJS.png, id=120, 348.30125pt x 145.54375pt>
+<screen/expressJS.png, id=122, 348.30125pt x 145.54375pt>
 File: screen/expressJS.png Graphic file (type png)
 <use screen/expressJS.png>
-Package pdftex.def Info: screen/expressJS.png  used on input line 783.
+Package pdftex.def Info: screen/expressJS.png  used on input line 796.
 (pdftex.def)             Requested size: 145.68144pt x 60.87477pt.
 [29
 
  <./screen/git.png> <./screen/nodeJs.png>]
-<screen/postgresql.png, id=126, 285.065pt x 177.66376pt>
+<screen/postgresql.png, id=128, 285.065pt x 177.66376pt>
 File: screen/postgresql.png Graphic file (type png)
 <use screen/postgresql.png>
-Package pdftex.def Info: screen/postgresql.png  used on input line 798.
+Package pdftex.def Info: screen/postgresql.png  used on input line 811.
 (pdftex.def)             Requested size: 145.68144pt x 90.79436pt.
-<screen/docker.png, id=127, 247.92625pt x 204.765pt>
+<screen/docker.png, id=129, 247.92625pt x 204.765pt>
 File: screen/docker.png Graphic file (type png)
 <use screen/docker.png>
-Package pdftex.def Info: screen/docker.png  used on input line 813.
+Package pdftex.def Info: screen/docker.png  used on input line 826.
 (pdftex.def)             Requested size: 145.68144pt x 120.31975pt.
  [30 <./screen/expressJS.png> <./screen/postgresql.png> <./screen/docker.png>]
-<screen/JWT.png, id=135, 301.125pt x 168.63pt>
+<screen/JWT.png, id=137, 301.125pt x 168.63pt>
 File: screen/JWT.png Graphic file (type png)
 <use screen/JWT.png>
-Package pdftex.def Info: screen/JWT.png  used on input line 828.
+Package pdftex.def Info: screen/JWT.png  used on input line 841.
 (pdftex.def)             Requested size: 145.68144pt x 81.58475pt.
  [31 <./screen/JWT.png>] [32
 
 
 ]
 [33]
-Underfull \hbox (badness 1342) in paragraph at lines 932--934
+Underfull \hbox (badness 1342) in paragraph at lines 945--947
 \T1/cmr/m/it/10.95 van-ced Open Source Re-la-tio-nal Da-ta-base\T1/cmr/m/n/10.9
 5 . Do-cu-men-ta-tion of-fi-cielle. Dis-po-nible sur :
  []
@@ -408,13 +421,13 @@ L3 programming layer <2025-12-24>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 4204 strings out of 467870
- 73584 string characters out of 5419323
+ 4211 strings out of 467870
+ 73779 string characters out of 5419323
  498238 words of memory out of 5000000
- 33059 multiletter control sequences out of 15000+600000
+ 33066 multiletter control sequences out of 15000+600000
  641324 words of font info for 65 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,10n,65p,513b,385s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,12n,65p,513b,385s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\dev\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti10
 95.pk> <C:\Users\dev\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tc
 bx1095.pk> <C:\Users\dev\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi60
@@ -429,9 +442,9 @@ ljfour/jknappen/ec/dpi600\ecbx2488.pk> <C:\Users\dev\AppData\Local\MiKTeX\fonts
 onts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk> <C:\Users\dev\AppData\Local\MiKT
 eX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1728.pk> <C:\Users\dev\AppData\Local\
 MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1200.pk>
-Output written on "rapport SFE_stageFLOW.pdf" (35 pages, 749257 bytes).
+Output written on "rapport SFE_stageFLOW.pdf" (35 pages, 814837 bytes).
 PDF statistics:
- 656 PDF objects out of 1000 (max. 8388607)
+ 658 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 66 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 71 words of extra memory for PDF output out of 10000 (max. 10000000)
 
