@@ -544,99 +544,27 @@ d'incident.
 
 \subsection{Flux complet d'authentification JWT}
 
-Le système d'authentification JWT de StageFlow implémente un flux sécurisé et stateless impliquant plusieurs composants qui communiquent selon une séquence précise :
+Le système d'authentification JWT de StageFlow repose sur un flux stateless où le frontend collecte les identifiants, le backend valide la requête, signe un jeton court et les routes protégées vérifient ensuite ce jeton à chaque accès.
 
-\paragraph{Architecture des composants}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.95\textwidth]{screen/JWTsequenceDiagram.PNG}
+  \caption{Figure IV.3 :: Diagramme de séquence du flux d'authentification JWT}
+  \label{fig:jwt-sequence}
+\end{figure}
 
-\begin{itemize}
-  \item \textbf{Navigateur client} : Interface utilisateur (React/Vite) pour la saisie des identifiants
-  \item \textbf{Frontend Application} : Gestion des tokens, redirections et état utilisateur
-  \item \textbf{Backend Server} : API Express.js avec middleware JWT et validation RBAC
-  \item \textbf{Base de données PostgreSQL} : Stockage sécurisé des identifiants et rôles
-  \item \textbf{JWT Token} : Jeton signé contenant les informations d'authentification
-\end{itemize}
+\paragraph{Séquence sécurisée}
 
-\paragraph{Séquence complète d'authentification}
-
-\textbf{Étape 1 - Initialisation de la connexion}
 \begin{enumerate}
-  \item L'utilisateur saisit email et mot de passe dans le formulaire de connexion
-  \item Le frontend React/Vite valide les champs côté client (format email, non-vide)
-  \item La requête POST est envoyée à \texttt{/api/auth/login} avec les identifiants en JSON
+  \item L'utilisateur saisit ses identifiants dans le formulaire de connexion, puis le frontend vérifie le format avant d'envoyer la requête.
+  \item Le backend valide les données reçues, compare le mot de passe avec le hash bcrypt stocké et refuse toute entrée incohérente.
+  \item Si l'authentification réussit, un JWT signé avec \texttt{process.env.JWT\_SECRET} est généré avec l'identité et le rôle de l'utilisateur.
+  \item Le frontend stocke le token et l'ajoute ensuite dans l'en-tête \texttt{Authorization: Bearer ...} pour les routes protégées.
+  \item Le middleware JWT vérifie la signature, puis RBAC confirme que le rôle autorise l'accès; sinon, une réponse 401 est renvoyée.
+  \item En cas d'expiration ou d'invalidité du jeton, le frontend supprime l'état local et redirige l'utilisateur vers la page de connexion.
 \end{enumerate}
 
-\textbf{Étape 2 - Traitement backend}
-\begin{enumerate}
-  \setcounter{enumi}{3}
-  \item Le middleware Joi valide la structure des données reçues
-  \item Le contrôleur d'authentification recherche l'utilisateur dans PostgreSQL
-  \item La requête SQL vérifie l'existence de l'email dans la table \texttt{users}
-  \item Si trouvé, le mot de passe fourni est comparé au hash bcrypt stocké
-  \item La fonction \texttt{bcrypt.compare()} valide le mot de passe de manière sécurisée
-\end{enumerate}
-
-\textbf{Étape 3 - Génération du JWT}
-\begin{enumerate}
-  \setcounter{enumi}{8}
-  \item En cas de succès, le backend génère un payload JWT contenant :
-  \begin{itemize}
-    \item \texttt{userId} : Identifiant unique de l'utilisateur
-    \item \texttt{email} : Adresse email de l'utilisateur
-    \item \texttt{role} : Rôle (administrateur, superviseur, étudiant)
-    \item \texttt{iat} : Timestamp de création (issued at)
-    \item \texttt{exp} : Timestamp d'expiration (généralement 24h)
-  \end{itemize}
-  \item Le JWT est signé avec la clé secrète \texttt{process.env.JWT\_SECRET}
-  \item Le token est retourné au frontend dans la réponse HTTP
-\end{enumerate}
-
-\textbf{Étape 4 - Stockage et utilisation du token}
-\begin{enumerate}
-  \setcounter{enumi}{12}
-  \item Le frontend stocke le JWT dans \texttt{localStorage} ou \texttt{sessionStorage}
-  \item L'état utilisateur est mis à jour dans le contexte React
-  \item L'utilisateur est redirigé vers le tableau de bord selon son rôle
-  \item Axios est configuré pour inclure automatiquement le JWT dans les headers
-\end{enumerate}
-
-\textbf{Étape 5 - Requêtes authentifiées}
-\begin{enumerate}
-  \setcounter{enumi}{16}
-  \item Pour chaque requête API protégée, le frontend ajoute le header :
-  \begin{verbatim}
-    Authorization: Bearer <JWT_TOKEN>
-  \end{verbatim}
-  \item Le middleware JWT intercepte la requête sur les routes protégées
-  \item Le token est extrait du header et sa signature est vérifiée
-  \item Le payload est décodé et les informations utilisateur sont extraites
-  \item Le middleware RBAC vérifie si le rôle autorise l'accès à la ressource
-  \item Si autorisé, la requête poursuit vers le contrôleur final
-\end{enumerate}
-
-\textbf{Étape 6 - Gestion des erreurs et expiration}
-\begin{enumerate}
-  \setcounter{enumi}{22}
-  \item En cas de token invalide/expiré, le middleware retourne 401 Unauthorized
-  \item Le frontend intercepte l'erreur 401 via les intercepteurs Axios
-  \item Les tokens locaux sont supprimés et l'état utilisateur est réinitialisé
-  \item L'utilisateur est redirigé vers la page de connexion
-  \item Un message d'erreur informe de la nécessité de se reconnecter
-\end{enumerate}
-
-\paragraph{Sécurité implémentée}
-
-\begin{itemize}
-  \item \textbf{Hachage bcrypt} : Les mots de passe ne sont jamais stockés en clair
-  \item \textbf{Signature HMAC} : Les tokens JWT sont signés pour empêcher la falsification
-  \item \textbf{Expiration courte} : Les tokens expirent après 24h maximum
-  \item \textbf{HTTPS obligatoire} : Toutes les communications sont chiffrées
-  \item \textbf{Validation stricte} : Joi valide toutes les entrées utilisateur
-  \item \textbf{Logs d'audit} : Toutes les tentatives de connexion sont enregistrées
-\end{itemize}
-
-\paragraph{Avantages de l'architecture JWT}
-
-Cette approche stateless élimine le besoin de sessions serveur, améliore la scalabilité horizontale et permet une authentification efficace dans une architecture microservices. La séparation claire entre authentification (JWT) et autorisation (RBAC) assure une gestion flexible et sécurisée des accès selon les rôles métier de StageFlow.
+Cette architecture renforce la sécurité en combinant hachage bcrypt, signature du jeton, expiration limitée, validation stricte des entrées et contrôle d'accès par rôles. Elle supprime la dépendance à une session serveur et garantit une authentification simple, traçable et adaptée à un environnement web distribué.
 
 \section{Fiabilité et qualité}
 
