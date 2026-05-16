@@ -16,12 +16,6 @@ const workflowSteps = [
     icon: "👥"
   },
   {
-    title: "Analyse du CV",
-    label: "IA via n8n",
-    description: "L’automatisation identifie les compétences et les points forts du candidat.",
-    icon: "🧠"
-  },
-  {
     title: "Affectation au projet",
     label: "Matching",
     description: "Le stagiaire est positionné sur un projet adapté à son profil.",
@@ -50,11 +44,6 @@ const keyFeatures = [
     title: "Suivi opérationnel",
     description: "Gardez une vue claire sur les tâches, progrès et validations.",
     icon: "✅"
-  },
-  {
-    title: "Automatisation IA",
-    description: "Accélérez l’analyse des candidatures et la prise de décision.",
-    icon: "⚡"
   }
 ];
 
@@ -68,7 +57,7 @@ const testimonials = [
   },
   {
     quote:
-      "L’enchaînement Projet → Add Intern → IA → affectation est simple à expliquer à toute l’équipe.",
+      "L’enchaînement Projet → Add Intern → affectation est simple à expliquer à toute l’équipe.",
     name: "Yassine B.",
     role: "Superviseur",
     company: "StageFlow Partner"
@@ -138,7 +127,7 @@ const LandingPage = () => {
               Une plateforme claire pour structurer les projets, intégrer les stagiaires et piloter la progression.
             </h1>
             <p>
-              StageFlow centralise la création des projets, l’ajout des stagiaires, l’analyse des CV et le suivi des tâches dans un parcours fluide.
+              StageFlow centralise la création des projets, l’ajout des stagiaires et le suivi des tâches dans un parcours fluide.
             </p>
             <div className="hero-cta">
               <Link className="primary-btn" to={isAuthenticated ? "/app/dashboard" : "/register"}>

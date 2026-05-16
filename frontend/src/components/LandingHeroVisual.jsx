@@ -27,7 +27,7 @@ const LandingHeroVisual = () => {
       <div className="landing-hero-card landing-hero-card-main">
         <div className="hero-card-topline">
           <span className="hero-pill is-live">Pipeline actif</span>
-          <span className="hero-chip">IA + suivi</span>
+          <span className="hero-chip">Suivi intégré</span>
         </div>
 
         <div className="hero-dashboard-grid">
@@ -36,7 +36,7 @@ const LandingHeroVisual = () => {
             <strong>18</strong>
           </article>
           <article>
-            <span>CV analysés</span>
+            <span>Stagiaires affectés</span>
             <strong>92%</strong>
           </article>
           <article>
@@ -60,10 +60,6 @@ const LandingHeroVisual = () => {
           </div>
           <div className="hero-timeline-step is-active">
             <span />
-            <p>Analyse IA</p>
-          </div>
-          <div className="hero-timeline-step">
-            <span />
             <p>Assignation</p>
           </div>
         </div>
@@ -76,11 +72,6 @@ const LandingHeroVisual = () => {
             </article>
           ))}
         </div>
-      </div>
-
-      <div className="landing-hero-floating-card landing-hero-floating-card-left">
-        <strong>Matching CV</strong>
-        <p>n8n détecte les compétences clés et les compare au projet.</p>
       </div>
 
       <div className="landing-hero-floating-card landing-hero-floating-card-right">
