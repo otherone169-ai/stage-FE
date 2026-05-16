@@ -3,6 +3,45 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import apiClient from "../api/client";
 
+const NAV_ICONS = {
+  dashboard: "◫",
+  stats: "◎",
+  project: "◇",
+  projects: "▣",
+  addIntern: "＋",
+  assign: "⇢",
+  notifications: "◉",
+  tasks: "☑",
+  reports: "▤",
+  companies: "▦",
+  students: "◎",
+  supervisors: "◈",
+  analytics: "◧",
+  profile: "○"
+};
+
+const NavItem = ({ to, icon, children, onClick, badge }) => {
+  const link = (
+    <NavLink to={to} onClick={onClick}>
+      <span className="nav-link-icon" aria-hidden="true">
+        {icon}
+      </span>
+      {children}
+    </NavLink>
+  );
+
+  if (badge != null) {
+    return (
+      <div className="nav-link-with-badge">
+        {link}
+        {badge > 0 && <span className="notification-badge">{badge}</span>}
+      </div>
+    );
+  }
+
+  return link;
+};
+
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -38,135 +77,149 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, [user]);
 
+  const profilePath =
+    user?.role === "supervisor"
+      ? "/app/supervisor/profile"
+      : user?.role === "student"
+        ? "/app/student/profile"
+        : "/app/admin/profile";
+
   return (
     <div className="app-shell">
-      <button className="mobile-menu-toggle" onClick={toggleMobileMenu} aria-label="Toggle mobile menu">
-        Menu
+      <button
+        type="button"
+        className="mobile-menu-toggle"
+        onClick={toggleMobileMenu}
+        aria-label={isMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        aria-expanded={isMobileMenuOpen}
+      >
+        ☰
       </button>
 
-      <aside className={`sidebar ${isMobileMenuOpen ? "open" : ""}`} aria-label="Primary navigation">
+      <div
+        className={`mobile-overlay ${isMobileMenuOpen ? "visible" : ""}`}
+        onClick={closeMobileMenu}
+        aria-hidden="true"
+      />
+
+      <aside className={`sidebar ${isMobileMenuOpen ? "open" : ""}`} aria-label="Navigation principale">
         <div className="sidebar-header">
           <div className="brand">
-            <div className="brand-dot" />
+            <span className="brand-dot" />
             <div>
               <h1>StageFlow</h1>
-              <p>Supervision des projets et stagiaires</p>
+              <p>Gestion des stages</p>
             </div>
           </div>
 
           <div className="sidebar-user">
-            <div className="avatar" aria-hidden>
+            <div className="avatar" aria-hidden="true">
               {initials}
             </div>
             <div className="user-meta">
-              <div className="user-email">{user?.email || "Guest"}</div>
-              <div className="role-badge">{user?.role || "guest"}</div>
+              <div className="user-email">{user?.email || "Invité"}</div>
+              <span className="role-badge">{user?.role || "guest"}</span>
             </div>
           </div>
         </div>
 
         <nav className="nav-links" role="navigation">
           <div className="nav-group">
-            <div className="nav-group-title">Overview</div>
-            <NavLink to="/app/dashboard" onClick={closeMobileMenu}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/app/enhanced-dashboard" onClick={closeMobileMenu}>
-              Advanced stats
-            </NavLink>
-          </div>
-
-          <div className="nav-group">
-            <div className="nav-group-title">
-              {user?.role === "supervisor" ? "Supervision" : "Espace stagiaire"}
-            </div>
-            {user?.role === "student" && (
-              <NavLink to="/app/student/my-project" onClick={closeMobileMenu}>
-                My project
-              </NavLink>
-            )}
-            {user?.role === "supervisor" && (
-              <NavLink to="/app/supervisor/my-projects" onClick={closeMobileMenu}>
-                My projects
-              </NavLink>
-            )}
-            {user?.role === "supervisor" && (
-              <NavLink to="/app/supervisor/add-intern" onClick={closeMobileMenu}>
-                Ajouter un stagiaire
-              </NavLink>
-            )}
-            {user?.role === "supervisor" && (
-              <NavLink to="/app/supervisor/assign-intern" onClick={closeMobileMenu}>
-                Affecter un stagiaire
-              </NavLink>
-            )}
+            <div className="nav-group-title">Vue d&apos;ensemble</div>
+            <NavItem to="/app/dashboard" icon={NAV_ICONS.dashboard} onClick={closeMobileMenu}>
+              Tableau de bord
+            </NavItem>
+            <NavItem to="/app/enhanced-dashboard" icon={NAV_ICONS.stats} onClick={closeMobileMenu}>
+              Statistiques avancées
+            </NavItem>
           </div>
 
           {(user?.role === "student" || user?.role === "supervisor") && (
             <div className="nav-group">
-              <div className="nav-group-title">Work</div>
-              <div className="nav-link-with-badge">
-                <NavLink to="/app/notifications" onClick={closeMobileMenu}>
-                  Notifications
-                </NavLink>
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              <div className="nav-group-title">
+                {user?.role === "supervisor" ? "Supervision" : "Espace stagiaire"}
               </div>
-              <NavLink to="/app/tasks" onClick={closeMobileMenu}>
-                Tasks
-              </NavLink>
-              <NavLink to="/app/reports" onClick={closeMobileMenu}>
-                Reports
-              </NavLink>
+              {user?.role === "student" && (
+                <NavItem to="/app/student/my-project" icon={NAV_ICONS.project} onClick={closeMobileMenu}>
+                  Mon projet
+                </NavItem>
+              )}
+              {user?.role === "supervisor" && (
+                <NavItem to="/app/supervisor/my-projects" icon={NAV_ICONS.projects} onClick={closeMobileMenu}>
+                  Mes projets
+                </NavItem>
+              )}
+              {user?.role === "supervisor" && (
+                <NavItem to="/app/supervisor/add-intern" icon={NAV_ICONS.addIntern} onClick={closeMobileMenu}>
+                  Ajouter un stagiaire
+                </NavItem>
+              )}
+              {user?.role === "supervisor" && (
+                <NavItem to="/app/supervisor/assign-intern" icon={NAV_ICONS.assign} onClick={closeMobileMenu}>
+                  Affecter un stagiaire
+                </NavItem>
+              )}
+            </div>
+          )}
+
+          {(user?.role === "student" || user?.role === "supervisor") && (
+            <div className="nav-group">
+              <div className="nav-group-title">Travail</div>
+              <NavItem
+                to="/app/notifications"
+                icon={NAV_ICONS.notifications}
+                onClick={closeMobileMenu}
+                badge={unreadCount}
+              >
+                Notifications
+              </NavItem>
+              <NavItem to="/app/tasks" icon={NAV_ICONS.tasks} onClick={closeMobileMenu}>
+                Tâches
+              </NavItem>
+              <NavItem to="/app/reports" icon={NAV_ICONS.reports} onClick={closeMobileMenu}>
+                Rapports
+              </NavItem>
             </div>
           )}
 
           {user?.role === "admin" && (
             <div className="nav-group">
               <div className="nav-group-title">Administration</div>
-              <NavLink to="/app/admin/rh-companies" onClick={closeMobileMenu}>
-                Companies
-              </NavLink>
-              <NavLink to="/app/admin/students" onClick={closeMobileMenu}>
-                Students
-              </NavLink>
-              <NavLink to="/app/admin/supervisors" onClick={closeMobileMenu}>
-                Supervisors
-              </NavLink>
-              <NavLink to="/app/admin/analytics" onClick={closeMobileMenu}>
-                Analytics
-              </NavLink>
+              <NavItem to="/app/admin/rh-companies" icon={NAV_ICONS.companies} onClick={closeMobileMenu}>
+                Entreprises
+              </NavItem>
+              <NavItem to="/app/admin/students" icon={NAV_ICONS.students} onClick={closeMobileMenu}>
+                Stagiaires
+              </NavItem>
+              <NavItem to="/app/admin/supervisors" icon={NAV_ICONS.supervisors} onClick={closeMobileMenu}>
+                Superviseurs
+              </NavItem>
+              <NavItem to="/app/admin/analytics" icon={NAV_ICONS.analytics} onClick={closeMobileMenu}>
+                Analytique
+              </NavItem>
             </div>
           )}
         </nav>
 
         <div className="sidebar-footer">
           {(user?.role === "supervisor" || user?.role === "student" || user?.role === "admin") && (
-            <NavLink
-              className="sidebar-footer-link"
-              onClick={closeMobileMenu}
-              to={
-                user?.role === "supervisor"
-                  ? "/app/supervisor/profile"
-                  : user?.role === "student"
-                    ? "/app/student/profile"
-                    : "/app/admin/profile"
-              }
-            >
-              My profile
+            <NavLink className="sidebar-footer-link" onClick={closeMobileMenu} to={profilePath}>
+              Mon profil
             </NavLink>
           )}
           <button type="button" className="logout-btn" onClick={handleLogout}>
-            Sign out
+            Déconnexion
           </button>
         </div>
       </aside>
 
-      <main className="content" onClick={closeMobileMenu}>
+      <main className="content">
         <header className="topbar">
           <div>
-            <h2>Welcome, {user?.email}</h2>
-            <p>Role: {user?.role}</p>
+            <h2>Bienvenue</h2>
+            <p>{user?.email}</p>
           </div>
+          <span className="topbar-role">{user?.role}</span>
         </header>
 
         <section className="page-wrapper">

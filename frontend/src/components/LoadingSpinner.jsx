@@ -1,6 +1,6 @@
-const LoadingSpinner = ({ label = "Chargement..." }) => (
-  <div className="loading-box" role="status" aria-live="polite">
-    <span className="spinner" />
+const LoadingSpinner = ({ label = "Chargement…" }) => (
+  <div className="loading-box ds-loading" role="status" aria-live="polite" aria-busy="true">
+    <span className="spinner ds-spinner" />
     <span>{label}</span>
   </div>
 );

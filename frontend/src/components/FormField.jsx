@@ -96,7 +96,7 @@ const FormField = ({
 
       {isPassword && showPasswordStrength && getStrengthBars()}
       {hint && <p className="form-hint">{hint}</p>}
-      {error && <p className="form-error" style={{ margin: "6px 0 0" }}>{error}</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   );
 };

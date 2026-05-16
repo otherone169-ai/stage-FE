@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import apiClient from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
+import PageLayout from "../components/PageLayout";
+import { Alert, Card, PageToolbar } from "../components/ui";
 
 const AdminRhCompaniesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
-  const [filters, setFilters] = useState({
-    company: ""
-  });
+  const [filters, setFilters] = useState({ company: "" });
 
   const filteredRows = useMemo(() => {
     const companyQuery = filters.company.trim().toLowerCase();
-
     return rows.filter((row) => {
       const rowCompany = (row.company_name || "").toLowerCase();
       return !companyQuery || rowCompany.includes(companyQuery);
@@ -27,7 +26,7 @@ const AdminRhCompaniesPage = () => {
         const { data } = await apiClient.get("/admin/companies-rh");
         setRows(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load companies");
+        setError(err.response?.data?.message || "Impossible de charger les entreprises");
       } finally {
         setLoading(false);
       }
@@ -37,56 +36,59 @@ const AdminRhCompaniesPage = () => {
   }, []);
 
   if (loading) {
-    return <LoadingSpinner label="Loading companies..." />;
+    return <LoadingSpinner label="Chargement des entreprises…" />;
   }
 
   return (
-    <div className="page-grid page-grid-stack">
-      <section className="card">
-        <h3>Company filters</h3>
-        <form className="stack-form" onSubmit={(event) => event.preventDefault()}>
-          <input
-            placeholder="Filter by company"
-            value={filters.company}
-            onChange={(event) => setFilters((prev) => ({ ...prev, company: event.target.value }))}
-          />
-        </form>
-      </section>
+    <PageLayout
+      title="Entreprises"
+      subtitle="Vue consolidée des entreprises, superviseurs et projets associés."
+    >
+      {error && <Alert variant="error">{error}</Alert>}
 
-      <section className="card">
-        <h3>Companies overview</h3>
-        {error && <p className="form-error">{error}</p>}
+      <Card title="Filtres" flat>
+        <PageToolbar
+          searchValue={filters.company}
+          onSearchChange={(value) => setFilters((prev) => ({ ...prev, company: value }))}
+          searchPlaceholder="Filtrer par nom d'entreprise…"
+          meta={`${filteredRows.length} résultat${filteredRows.length !== 1 ? "s" : ""}`}
+        />
+      </Card>
+
+      <Card title="Vue d'ensemble">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Website</th>
-                <th>Supervisors</th>
-                <th>Projects</th>
+                <th>Entreprise</th>
+                <th>Localisation</th>
+                <th>Site web</th>
+                <th>Superviseurs</th>
+                <th>Projets</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row.company_name}>
-                  <td>{row.company_name || "-"}</td>
-                  <td>{row.company_location || "-"}</td>
-                  <td>{row.company_website || "-"}</td>
+                  <td>{row.company_name || "—"}</td>
+                  <td>{row.company_location || "—"}</td>
+                  <td>{row.company_website || "—"}</td>
                   <td>{row.supervisors_count ?? 0}</td>
                   <td>{row.projects_count ?? 0}</td>
                 </tr>
               ))}
               {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={5}>No companies match the current filter.</td>
+                  <td colSpan={5} className="muted-cell">
+                    Aucune entreprise ne correspond au filtre.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
+      </Card>
+    </PageLayout>
   );
 };
 

@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles.css";
+import "./styles/design-system/index.css";
 
 // Force light mode
 document.documentElement.setAttribute("data-theme", "light");

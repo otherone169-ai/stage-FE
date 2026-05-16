@@ -1,27 +1,21 @@
-import React from 'react';
-
-const PageLayout = ({ 
-  children, 
-  title, 
-  subtitle, 
-  actions, 
+const PageLayout = ({
+  children,
+  title,
+  subtitle,
+  actions,
   className = "",
   containerClassName = ""
-}) => {
-  return (
-    <div className={`page-layout ${className}`}>
-      <div className="page-header">
-        <div className="page-header-content">
-          <h1 className="page-title">{title}</h1>
-          {subtitle && <p className="page-subtitle">{subtitle}</p>}
-          {actions && <div className="page-actions">{actions}</div>}
-        </div>
+}) => (
+  <div className={`page-layout ${className}`.trim()}>
+    <header className="page-header ds-page-header">
+      <div className="page-header-content">
+        <h1 className="page-title ds-page-title">{title}</h1>
+        {subtitle && <p className="page-subtitle ds-page-subtitle">{subtitle}</p>}
       </div>
-      <div className={`page-content ${containerClassName}`}>
-        {children}
-      </div>
-    </div>
-  );
-};
+      {actions && <div className="page-actions">{actions}</div>}
+    </header>
+    <div className={`page-content ${containerClassName}`.trim()}>{children}</div>
+  </div>
+);
 
 export default PageLayout;
