@@ -19,12 +19,12 @@ import SupervisorProfilePage from "./pages/SupervisorProfilePage";
 import SupervisorsPage from "./pages/SupervisorsPage";
 import TasksPage from "./pages/TasksPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import SupervisorProjectsPage from "./pages/SupervisorProjectsPage";
 import EnhancedDashboardPage from "./pages/EnhancedDashboardPage";
 import MyProjectPage from "./pages/MyProjectPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SupervisorMyProjectsPage from "./pages/SupervisorMyProjectsPage";
 import SupervisorAddInternPage from "./pages/SupervisorAddInternPage";
+import SupervisorAssignInternPage from "./pages/SupervisorAssignInternPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
 import AdminSupervisorsPage from "./pages/AdminSupervisorsPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
@@ -161,10 +161,10 @@ const App = () => (
         }
       />
       <Route
-        path="supervisor/projects"
+        path="supervisor/assign-intern"
         element={
           <ProtectedRoute allowedRoles={["supervisor"]}>
-            <SupervisorProjectsPage />
+            <SupervisorAssignInternPage />
           </ProtectedRoute>
         }
       />

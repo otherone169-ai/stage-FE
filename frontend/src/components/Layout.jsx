@@ -91,13 +91,13 @@ const Layout = () => {
               </NavLink>
             )}
             {user?.role === "supervisor" && (
-              <NavLink to="/app/supervisor/projects" onClick={closeMobileMenu}>
-                Project builder
+              <NavLink to="/app/supervisor/add-intern" onClick={closeMobileMenu}>
+                Ajouter un stagiaire
               </NavLink>
             )}
             {user?.role === "supervisor" && (
-              <NavLink to="/app/supervisor/add-intern" onClick={closeMobileMenu}>
-                Stagiaires
+              <NavLink to="/app/supervisor/assign-intern" onClick={closeMobileMenu}>
+                Affecter un stagiaire
               </NavLink>
             )}
           </div>
