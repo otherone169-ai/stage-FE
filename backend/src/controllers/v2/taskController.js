@@ -40,7 +40,7 @@ const hasTaskAccess = async (taskId, user) => {
        FROM tasks t
        JOIN projects p ON p.id = t.project_id
        JOIN interns i ON i.project_id = p.id
-       WHERE t.id = $1 AND i.student_id = $2`,
+       WHERE t.id = $1 AND i.student_id = $2 AND i.status IN ('active', 'paused')`,
       [taskId, studentId]
     );
 
@@ -181,6 +181,7 @@ export const listTasks = async (req, res, next) => {
 
       values.push(studentId);
       where.push(`i.student_id = $${values.length}`);
+      where.push(`i.status IN ('active', 'paused')`);
     }
 
     if (req.query.status) {
@@ -209,7 +210,7 @@ export const listTasks = async (req, res, next) => {
          COUNT(DISTINCT tr.id)::int AS remark_count
        FROM tasks t
        JOIN projects p ON p.id = t.project_id
-       LEFT JOIN interns i ON i.project_id = p.id
+       ${req.user.role === "student" ? "JOIN" : "LEFT JOIN"} interns i ON i.project_id = p.id
        LEFT JOIN task_remarks tr ON tr.task_id = t.id
        ${whereClause}
        GROUP BY t.id, p.title

@@ -384,15 +384,26 @@ export const getMyAssignedProject = async (req, res, next) => {
          p.title,
          p.description,
          p.objectives,
-         COUNT(DISTINCT t.id)::int AS total_tasks,
-         COUNT(DISTINCT CASE WHEN t.status = 'todo' THEN t.id END)::int AS todo_tasks,
-         COUNT(DISTINCT CASE WHEN t.status = 'in_progress' THEN t.id END)::int AS in_progress_tasks,
-         COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END)::int AS done_tasks
+         p.location,
+         p.duration,
+         p.domain,
+         p.requirements,
+         p.created_at,
+         ir.id AS intern_id,
+         ir.status AS intern_status,
+         ir.start_date,
+         ir.end_date,
+         sup.full_name AS supervisor_name,
+         sup.position AS supervisor_position,
+         sup.company_name,
+         (SELECT COUNT(*)::int FROM tasks t WHERE t.project_id = p.id) AS total_tasks,
+         (SELECT COUNT(*)::int FROM tasks t WHERE t.project_id = p.id AND t.status = 'todo') AS todo_tasks,
+         (SELECT COUNT(*)::int FROM tasks t WHERE t.project_id = p.id AND t.status = 'in_progress') AS in_progress_tasks,
+         (SELECT COUNT(*)::int FROM tasks t WHERE t.project_id = p.id AND t.status = 'done') AS done_tasks
        FROM interns ir
        JOIN projects p ON p.id = ir.project_id
-       LEFT JOIN tasks t ON t.project_id = p.id
-       WHERE ir.student_id = $1 AND ir.status = 'active'
-       GROUP BY p.id
+       LEFT JOIN supervisors sup ON sup.id = ir.supervisor_id
+       WHERE ir.student_id = $1 AND ir.status IN ('active', 'paused')
        ORDER BY ir.created_at DESC
        LIMIT 1`,
       [student.rows[0].id]
