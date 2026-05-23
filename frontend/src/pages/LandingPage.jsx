@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getHomePathForRole } from "../utils/roleHome";
 import LandingHeroVisual from "../components/LandingHeroVisual";
 
 const workflowSteps = [
@@ -96,7 +97,8 @@ const visualShowcase = [
 ];
 
 const LandingPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const platformPath = isAuthenticated ? getHomePathForRole(user?.role) : "/register";
 
   return (
     <div className="landing-page">
@@ -113,7 +115,7 @@ const LandingPage = () => {
           <Link className="ghost-btn" to="/login">
             Se connecter
           </Link>
-          <Link className="primary-btn" to={isAuthenticated ? "/app/dashboard" : "/register"}>
+          <Link className="primary-btn" to={platformPath}>
             {isAuthenticated ? "Ouvrir la plateforme" : "Demarrer"}
           </Link>
         </nav>
@@ -130,7 +132,7 @@ const LandingPage = () => {
               StageFlow centralise la création des projets, l’ajout des stagiaires et le suivi des tâches dans un parcours fluide.
             </p>
             <div className="hero-cta">
-              <Link className="primary-btn" to={isAuthenticated ? "/app/dashboard" : "/register"}>
+              <Link className="primary-btn" to={platformPath}>
                 Découvrir la plateforme
               </Link>
               <Link className="ghost-btn" to="#workflow">
@@ -231,7 +233,7 @@ const LandingPage = () => {
             Lancez votre espace en quelques minutes pour connecter les talents aux bonnes equipes.
           </p>
           <div className="hero-cta">
-            <Link className="primary-btn" to={isAuthenticated ? "/app/dashboard" : "/register"}>
+            <Link className="primary-btn" to={platformPath}>
               Creer un compte
             </Link>
             <Link className="ghost-btn" to="/login">

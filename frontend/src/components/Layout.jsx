@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import apiClient from "../api/client";
+import { getHomePathForRole } from "../utils/roleHome";
 
 const NAV_ICONS = {
   dashboard: "◫",
@@ -16,7 +17,6 @@ const NAV_ICONS = {
   companies: "▦",
   students: "◎",
   supervisors: "◈",
-  analytics: "◧",
   profile: "○"
 };
 
@@ -126,12 +126,20 @@ const Layout = () => {
         <nav className="nav-links" role="navigation">
           <div className="nav-group">
             <div className="nav-group-title">Vue d&apos;ensemble</div>
-            <NavItem to="/app/dashboard" icon={NAV_ICONS.dashboard} onClick={closeMobileMenu}>
-              Tableau de bord
-            </NavItem>
-            <NavItem to="/app/enhanced-dashboard" icon={NAV_ICONS.stats} onClick={closeMobileMenu}>
-              Statistiques avancées
-            </NavItem>
+            {user?.role === "admin" ? (
+              <>
+                <NavItem to="/app/dashboard" icon={NAV_ICONS.dashboard} onClick={closeMobileMenu}>
+                  Tableau de bord
+                </NavItem>
+                <NavItem to="/app/enhanced-dashboard" icon={NAV_ICONS.stats} onClick={closeMobileMenu}>
+                  Statistiques avancées
+                </NavItem>
+              </>
+            ) : (
+              <NavItem to={getHomePathForRole(user?.role)} icon={NAV_ICONS.dashboard} onClick={closeMobileMenu}>
+                Tableau de bord
+              </NavItem>
+            )}
           </div>
 
           {(user?.role === "student" || user?.role === "supervisor") && (
@@ -193,9 +201,6 @@ const Layout = () => {
               </NavItem>
               <NavItem to="/app/admin/supervisors" icon={NAV_ICONS.supervisors} onClick={closeMobileMenu}>
                 Superviseurs
-              </NavItem>
-              <NavItem to="/app/admin/analytics" icon={NAV_ICONS.analytics} onClick={closeMobileMenu}>
-                Analytique
               </NavItem>
             </div>
           )}

@@ -5,6 +5,46 @@ import { useAuth } from "../hooks/useAuth";
 import FormField from "../components/FormField";
 import PageLayout from "../components/PageLayout";
 
+const MetaIcon = ({ children }) => (
+  <span className="project-card-meta-icon" aria-hidden="true">
+    {children}
+  </span>
+);
+
+const LocationIcon = () => (
+  <MetaIcon>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  </MetaIcon>
+);
+
+const CalendarIcon = () => (
+  <MetaIcon>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 11h18" />
+    </svg>
+  </MetaIcon>
+);
+
+const TagIcon = () => (
+  <MetaIcon>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <circle cx="7" cy="7" r="1.25" fill="currentColor" stroke="none" />
+    </svg>
+  </MetaIcon>
+);
+
+const TrashIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+    <path d="M10 11v5M14 11v5" />
+  </svg>
+);
+
 const buildInitialProjectForm = () => ({
   title: "",
   description: "",
@@ -29,7 +69,7 @@ const SupervisorMyProjectsPage = () => {
 
   useEffect(() => {
     if (!user || user.role !== "supervisor") {
-      navigate("/app/dashboard");
+      navigate("/app/enhanced-dashboard");
       return;
     }
 
@@ -152,33 +192,54 @@ const SupervisorMyProjectsPage = () => {
           </div>
         ) : (
           projects.map((project) => (
-            <div key={project.id} className="project-card">
-              <div className="project-card-header">
-                <div>
-                  <h3 className="project-card-title">{project.title}</h3>
+            <article key={project.id} className="project-card">
+              <header className="project-card-header">
+                <h3 className="project-card-title">{project.title}</h3>
+                <button
+                  type="button"
+                  className="project-card-delete"
+                  onClick={() => deleteProject(project.id)}
+                  aria-label={`Supprimer le projet ${project.title}`}
+                  title="Supprimer"
+                >
+                  <TrashIcon />
+                </button>
+              </header>
+
+              {project.description && (
+                <p className="project-card-description">{project.description}</p>
+              )}
+
+              <div className="project-card-meta">
+                <div className="project-card-meta-item">
+                  <LocationIcon />
+                  <span className="project-card-meta-text">{project.location || "Non renseigné"}</span>
+                </div>
+                <div className="project-card-meta-item">
+                  <CalendarIcon />
+                  <span className="project-card-meta-text">{project.duration || "Non renseigné"}</span>
+                </div>
+                <div className="project-card-meta-item">
+                  <TagIcon />
+                  <span className="project-card-meta-text">{project.domain || "Non renseigné"}</span>
                 </div>
               </div>
 
-              {project.description && <p className="project-card-description">{project.description}</p>}
-
-              <div className="project-card-meta">
-                <div className="meta-item"><span className="meta-label">Location:</span><span>{project.location || "-"}</span></div>
-                <div className="meta-item"><span className="meta-label">Duration:</span><span>{project.duration || "-"}</span></div>
-                <div className="meta-item"><span className="meta-label">Domain:</span><span>{project.domain || "-"}</span></div>
-              </div>
-
               <div className="project-card-stats">
-                <div className="project-stat"><span className="project-stat-value">{project.task_count || 0}</span><span className="project-stat-label">Tasks</span></div>
-                <div className="project-stat"><span className="project-stat-value">{project.completed_task_count || 0}</span><span className="project-stat-label">Done</span></div>
-                <div className="project-stat"><span className="project-stat-value">{project.interns_count || 0}</span><span className="project-stat-label">Interns</span></div>
+                <div className="project-card-stat-badge">
+                  <span className="project-card-stat-value">{project.task_count || 0}</span>
+                  <span className="project-card-stat-label">Tâches</span>
+                </div>
+                <div className="project-card-stat-badge">
+                  <span className="project-card-stat-value">{project.completed_task_count || 0}</span>
+                  <span className="project-card-stat-label">Terminées</span>
+                </div>
+                <div className="project-card-stat-badge">
+                  <span className="project-card-stat-value">{project.interns_count || 0}</span>
+                  <span className="project-card-stat-label">Stagiaires</span>
+                </div>
               </div>
-
-              <div className="project-card-actions">
-                <button className="btn btn-secondary" onClick={() => deleteProject(project.id)}>
-                  Delete
-                </button>
-              </div>
-            </div>
+            </article>
           ))
         )}
       </div>

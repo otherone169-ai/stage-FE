@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
+import StudentPlacementCard from "../components/dashboard/StudentPlacementCard";
+import SupervisorProjectTimelineCard from "../components/dashboard/SupervisorProjectTimelineCard";
+import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
+import PageLayout from "../components/PageLayout";
+import { Alert, Card, StatCard } from "../components/ui";
+import { useAuth } from "../hooks/useAuth";
 
 const EnhancedDashboardPage = () => {
   const { user } = useAuth();
@@ -41,71 +47,48 @@ const EnhancedDashboardPage = () => {
   }, [user, navigate]);
 
   if (loading) {
-    return <div className="page-wrapper"><p>Loading dashboard...</p></div>;
+    return <LoadingSpinner label="Chargement des statistiques…" />;
   }
 
   if (error) {
-    return <div className="page-wrapper"><div className="form-error">{error}</div></div>;
+    return <Alert variant="error">{error}</Alert>;
   }
 
   if (user?.role === "supervisor") {
-    const studentStats = stats?.studentStats || {};
-    const projectStats = stats?.projectStats || [];
+    const summary = stats?.summary || {};
     const projectsProgress = stats?.projects || [];
+    const totalInterns = summary.totalInterns ?? stats?.studentStats?.total ?? 0;
+    const totalProjects = summary.totalProjects ?? stats?.projectStats?.length ?? 0;
+    const unassignedStudents = summary.unassignedStudents ?? 0;
 
     return (
-      <div className="page-wrapper">
-        <h2>Supervisor advanced stats</h2>
-
-        <div className="dashboard-grid">
-          <div className="metric-card"><strong>{studentStats.total ?? 0}</strong><p>Total interns</p></div>
-          <div className="metric-card"><strong>{studentStats.active ?? 0}</strong><p>Active</p></div>
-          <div className="metric-card"><strong>{studentStats.paused ?? 0}</strong><p>Paused</p></div>
-          <div className="metric-card"><strong>{studentStats.completed ?? 0}</strong><p>Completed</p></div>
+      <PageLayout
+        title="Tableau de bord"
+        subtitle="Vue d'ensemble de vos stagiaires, projets et échéances."
+        containerClassName="enhanced-dashboard enhanced-dashboard--supervisor"
+      >
+        <div className="dashboard-grid ds-stat-grid">
+          <StatCard label="Total stagiaires" value={totalInterns} icon="👥" />
+          <StatCard label="Total projets" value={totalProjects} icon="▣" />
+          <StatCard label="Stagiaires non affectés" value={unassignedStudents} icon="◎" />
         </div>
 
-        <section className="card" style={{ marginTop: "24px" }}>
-          <h3>Projects</h3>
-          {projectStats.length === 0 ? (
-            <p>No projects yet.</p>
-          ) : (
-            <table style={{ width: "100%", marginTop: "12px" }}>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Assigned interns</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectStats.map((project) => (
-                  <tr key={project.id}>
-                    <td>{project.title}</td>
-                    <td>{project.student_count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-
-        <section className="card" style={{ marginTop: "24px" }}>
-          <h3>Project timelines</h3>
+        <Card title="Échéances des projets" subtitle="Suivi de l'avancement et des dates clés par projet.">
           {projectsProgress.length === 0 ? (
-            <p>No projects yet.</p>
+            <EmptyState
+              icon="▣"
+              title="Aucun projet"
+              description="Créez un projet pour commencer à suivre les échéances et les affectations."
+            />
           ) : (
-            <div style={{ display: "grid", gap: "16px" }}>
+            <div className="supervisor-timelines-grid">
               {projectsProgress.map((project) => (
-                <div key={project.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
-                  <h4>{project.title}</h4>
-                  <p>{project.total_students} interns, {project.active_students} active</p>
-                  <p>{project.progressPercent}% progress</p>
-                  <p>{project.daysRemaining ?? "-"} days remaining</p>
-                </div>
+                <SupervisorProjectTimelineCard key={project.id} project={project} />
               ))}
             </div>
           )}
-        </section>
-      </div>
+        </Card>
+      </PageLayout>
     );
   }
 
@@ -114,35 +97,46 @@ const EnhancedDashboardPage = () => {
     const taskStats = stats?.taskStats || {};
 
     return (
-      <div className="page-wrapper">
-        <h2>Student advanced stats</h2>
-
-        <div className="dashboard-grid">
-          <div className="metric-card"><strong>{taskStats.total ?? 0}</strong><p>Total tasks</p></div>
-          <div className="metric-card"><strong>{taskStats.todo ?? 0}</strong><p>Todo</p></div>
-          <div className="metric-card"><strong>{taskStats.in_progress ?? 0}</strong><p>In progress</p></div>
-          <div className="metric-card"><strong>{taskStats.done ?? 0}</strong><p>Done</p></div>
+      <PageLayout
+        title="Statistiques avancées"
+        subtitle="Suivez vos projets, tâches et l'avancement de vos stages."
+        containerClassName="enhanced-dashboard enhanced-dashboard--student"
+      >
+        <div className="dashboard-grid ds-stat-grid">
+          <div className="metric-card ds-stat-card">
+            <strong className="ds-stat-card__value">{taskStats.total ?? 0}</strong>
+            <p className="ds-stat-card__hint">Tâches totales</p>
+          </div>
+          <div className="metric-card ds-stat-card">
+            <strong className="ds-stat-card__value">{taskStats.todo ?? 0}</strong>
+            <p className="ds-stat-card__hint">À faire</p>
+          </div>
+          <div className="metric-card ds-stat-card">
+            <strong className="ds-stat-card__value">{taskStats.in_progress ?? 0}</strong>
+            <p className="ds-stat-card__hint">En cours</p>
+          </div>
+          <div className="metric-card ds-stat-card">
+            <strong className="ds-stat-card__value">{taskStats.done ?? 0}</strong>
+            <p className="ds-stat-card__hint">Terminées</p>
+          </div>
         </div>
 
-        <section className="card" style={{ marginTop: "24px" }}>
-          <h3>My projects</h3>
+        <Card title="Mes projets" subtitle="Vos affectations de stage en cours et passées.">
           {projects.length === 0 ? (
-            <p>No project assigned yet.</p>
+            <EmptyState
+              icon="◇"
+              title="Aucun projet assigné"
+              description="Vous recevrez une notification dès qu'un superviseur vous affectera à un projet."
+            />
           ) : (
-            <div style={{ display: "grid", gap: "16px" }}>
+            <div className="student-placements-grid">
               {projects.map((placement) => (
-                <div key={placement.id} style={{ padding: "16px", border: "1px solid var(--border)", borderRadius: "8px" }}>
-                  <h4>{placement.project_title}</h4>
-                  <p>Supervisor: {placement.supervisor_name}</p>
-                  <p>Status: {placement.status}</p>
-                  <p>{placement.progressPercent}% progress</p>
-                  <p>{placement.daysRemaining ?? "-"} days remaining</p>
-                </div>
+                <StudentPlacementCard key={placement.id} placement={placement} />
               ))}
             </div>
           )}
-        </section>
-      </div>
+        </Card>
+      </PageLayout>
     );
   }
 

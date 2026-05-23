@@ -49,6 +49,22 @@ export const getSupervisorDashboardStats = async (req, res, next) => {
       [supervisorId]
     );
 
+    const totalProjectsResult = await query(
+      `SELECT COUNT(*)::int AS count FROM projects WHERE supervisor_id = $1`,
+      [supervisorId]
+    );
+
+    const unassignedStudentsResult = await query(
+      `SELECT COUNT(*)::int AS count
+       FROM students s
+       WHERE s.created_by_supervisor_id = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM interns i
+           WHERE i.student_id = s.id AND i.status IN ('active', 'paused')
+         )`,
+      [supervisorId]
+    );
+
     const projectsWithProgressData = projectsWithProgress.rows.map((proj) => {
       let progressPercent = 0;
       if (proj.start_date && proj.end_date) {
@@ -71,7 +87,12 @@ export const getSupervisorDashboardStats = async (req, res, next) => {
     res.json({
       studentStats: studentStats.rows[0],
       projectStats: projectStats.rows,
-      projects: projectsWithProgressData
+      projects: projectsWithProgressData,
+      summary: {
+        totalInterns: studentStats.rows[0]?.total ?? 0,
+        totalProjects: totalProjectsResult.rows[0]?.count ?? 0,
+        unassignedStudents: unassignedStudentsResult.rows[0]?.count ?? 0
+      }
     });
   } catch (error) {
     next(error);

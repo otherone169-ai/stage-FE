@@ -3,6 +3,7 @@
 @import "./components.css";
 @import "./layout.css";
 @import "./pages.css";
+@import "./tasks.css";
 
 /* Override legacy global transition (too heavy) */
 * {

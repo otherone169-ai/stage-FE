@@ -5,6 +5,7 @@ import AdminRhCompaniesPage from "./pages/AdminRhCompaniesPage";
 import AdminStudentsPage from "./pages/AdminStudentsPage";
 import CompanyProfilePage from "./pages/CompanyProfilePage";
 import DashboardPage from "./pages/DashboardPage";
+import RoleHomeRedirect from "./components/RoleHomeRedirect";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import InternsPage from "./pages/InternsPage";
 import LandingPage from "./pages/LandingPage";
@@ -16,7 +17,6 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import SupervisorProfilePage from "./pages/SupervisorProfilePage";
-import SupervisorsPage from "./pages/SupervisorsPage";
 import TasksPage from "./pages/TasksPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import EnhancedDashboardPage from "./pages/EnhancedDashboardPage";
@@ -27,7 +27,6 @@ import SupervisorAddInternPage from "./pages/SupervisorAddInternPage";
 import SupervisorAssignInternPage from "./pages/SupervisorAssignInternPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
 import AdminSupervisorsPage from "./pages/AdminSupervisorsPage";
-import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 
 const App = () => (
   <Routes>
@@ -46,8 +45,15 @@ const App = () => (
         </ProtectedRoute>
       }
     >
-      <Route index element={<Navigate to="/app/dashboard" replace />} />
-      <Route path="dashboard" element={<DashboardPage />} />
+      <Route index element={<RoleHomeRedirect />} />
+      <Route
+        path="dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="admin/overview"
         element={
@@ -116,7 +122,7 @@ const App = () => (
         path="admin/analytics"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminAnalyticsPage />
+            <Navigate to="/app/dashboard" replace />
           </ProtectedRoute>
         }
       />

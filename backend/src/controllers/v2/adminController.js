@@ -183,14 +183,16 @@ export const getAssignmentStatusDistribution = async (req, res, next) => {
       `SELECT
          COUNT(*) FILTER (WHERE status = 'active')::int AS active,
          COUNT(*) FILTER (WHERE status = 'paused')::int AS paused,
-         COUNT(*) FILTER (WHERE status IN ('completed', 'terminated'))::int AS completed
+         COUNT(*) FILTER (WHERE status = 'completed')::int AS completed,
+         COUNT(*) FILTER (WHERE status = 'terminated')::int AS terminated
        FROM interns`
     );
 
     return res.json({
       active: result.rows[0]?.active || 0,
       paused: result.rows[0]?.paused || 0,
-      completed: result.rows[0]?.completed || 0
+      completed: result.rows[0]?.completed || 0,
+      terminated: result.rows[0]?.terminated || 0
     });
   } catch (error) {
     return next(error);

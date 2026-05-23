@@ -4,6 +4,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import AuthPageHeader from "../components/AuthPageHeader";
 import FormField from "../components/FormField";
 import { useAuth } from "../hooks/useAuth";
+import { getHomePathForRole } from "../utils/roleHome";
 
 const RegisterPage = () => {
   const { register, isLoading } = useAuth();
@@ -125,7 +126,7 @@ const RegisterPage = () => {
       return;
     }
 
-    navigate("/app/dashboard", { replace: true });
+    navigate(getHomePathForRole("supervisor"), { replace: true });
   };
 
   return (

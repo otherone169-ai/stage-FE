@@ -37,3 +37,18 @@ export const uploadCV = multer({
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
 });
+
+const pdfFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname || "").toLowerCase();
+  if (file.mimetype !== "application/pdf" || ext !== ".pdf") {
+    cb(new Error("Seuls les fichiers PDF sont acceptés."));
+    return;
+  }
+  cb(null, true);
+};
+
+export const uploadPdf = multer({
+  storage,
+  fileFilter: pdfFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});

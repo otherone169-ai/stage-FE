@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       await syncCurrentUser();
-      return { ok: true };
+      return { ok: true, user: data.user };
     } catch (error) {
       return { ok: false, message: error.response?.data?.message || "Login failed" };
     } finally {

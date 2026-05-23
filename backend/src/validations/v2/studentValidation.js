@@ -18,5 +18,5 @@ export const updateStudentProfileSchema = Joi.object({
 export const taskUpdateSchema = Joi.object({
   progress: Joi.string().max(2000).allow("", null),
   status: Joi.string().valid("todo", "in_progress", "done").required(),
-  fileUrl: Joi.string().uri().allow("", null)
+  fileUrl: Joi.string().max(500).allow("", null)
 });

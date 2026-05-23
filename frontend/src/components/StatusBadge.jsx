@@ -7,7 +7,9 @@ const StatusBadge = ({ status, size = "medium" }) => {
     draft: { label: "Brouillon", class: "draft", icon: "📝" },
     submitted: { label: "Soumise", class: "submitted", icon: "📤" },
     active: { label: "Actif", class: "active", icon: "▶" },
-    completed: { label: "Complété", class: "completed", icon: "✓" },
+    paused: { label: "En pause", class: "pending", icon: "⏸" },
+    terminated: { label: "Résilié", class: "rejected", icon: "✗" },
+    completed: { label: "Terminé", class: "completed", icon: "✓" },
     in_progress: { label: "En cours", class: "in_progress", icon: "⚙" },
     todo: { label: "À faire", class: "todo", icon: "□" }
   };

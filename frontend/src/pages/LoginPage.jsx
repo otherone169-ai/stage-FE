@@ -4,6 +4,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import AuthPageHeader from "../components/AuthPageHeader";
 import FormField from "../components/FormField";
 import { useAuth } from "../hooks/useAuth";
+import { getHomePathForRole } from "../utils/roleHome";
 
 const LoginPage = () => {
   const { login, isLoading } = useAuth();
@@ -15,7 +16,7 @@ const LoginPage = () => {
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
-  const from = location.state?.from?.pathname || "/app/dashboard";
+  const from = location.state?.from?.pathname;
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +56,9 @@ const LoginPage = () => {
       return;
     }
 
-    navigate(from, { replace: true });
+    const home = getHomePathForRole(result.user?.role);
+    const canUseFrom = from && (from !== "/app/dashboard" || result.user?.role === "admin");
+    navigate(canUseFrom ? from : home, { replace: true });
   };
 
   const handleBlur = (field) => {

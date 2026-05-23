@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { query } from "../../config/db.js";
 import { logAudit } from "../../utils/audit.js";
 
@@ -40,6 +42,103 @@ export const createReport = async (req, res, next) => {
 
     await logAudit(req.user.id, "REPORT_CREATED", { reportId: result.rows[0].id });
     return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const createReportPdf = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Un fichier PDF est requis." });
+    }
+
+    const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    const internId = req.body.internId;
+
+    if (!title || title.length < 3) {
+      return res.status(400).json({ message: "Le titre doit contenir au moins 3 caractères." });
+    }
+
+    if (!internId) {
+      return res.status(400).json({ message: "Le stage associé est requis." });
+    }
+
+    const studentId = await getStudentId(req.user.id);
+    if (!studentId) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+
+    const intern = await query(
+      `SELECT id, student_id, project_id
+       FROM interns
+       WHERE id = $1 AND student_id = $2`,
+      [internId, studentId]
+    );
+
+    if (intern.rows.length === 0) {
+      return res.status(403).json({ message: "Intern not found or not assigned to you" });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const content = `Rapport PDF soumis : ${title}`;
+
+    const result = await query(
+      `INSERT INTO reports (intern_id, project_id, title, content, file_url, status, submitted_at)
+       VALUES ($1, $2, $3, $4, $5, 'submitted', NOW())
+       RETURNING *`,
+      [internId, intern.rows[0].project_id, title, content, fileUrl]
+    );
+
+    await logAudit(req.user.id, "REPORT_PDF_SUBMITTED", { reportId: result.rows[0].id });
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const downloadReportPdf = async (req, res, next) => {
+  try {
+    const studentId = await getStudentId(req.user.id);
+    const supervisorId = await getSupervisorId(req.user.id);
+
+    let reportQuery;
+    let values;
+
+    if (studentId) {
+      reportQuery = `SELECT r.file_url, r.title
+        FROM reports r
+        JOIN interns i ON i.id = r.intern_id
+        WHERE r.id = $1 AND i.student_id = $2`;
+      values = [req.params.id, studentId];
+    } else if (supervisorId) {
+      reportQuery = `SELECT r.file_url, r.title
+        FROM reports r
+        JOIN projects p ON p.id = r.project_id
+        WHERE r.id = $1 AND p.supervisor_id = $2`;
+      values = [req.params.id, supervisorId];
+    } else {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const report = await query(reportQuery, values);
+    if (report.rows.length === 0) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const fileUrl = report.rows[0].file_url;
+    if (!fileUrl) {
+      return res.status(404).json({ message: "Ce rapport ne contient pas de fichier PDF." });
+    }
+
+    const filename = String(fileUrl).replace("/uploads/", "");
+    const filePath = path.resolve(process.cwd(), "uploads", filename);
+
+    if (!filePath.startsWith(path.resolve(process.cwd(), "uploads")) || !fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Fichier introuvable" });
+    }
+
+    return res.download(filePath, `${report.rows[0].title || "rapport"}.pdf`);
   } catch (error) {
     return next(error);
   }
@@ -96,6 +195,7 @@ export const listMyReports = async (req, res, next) => {
       `SELECT
          r.id,
          r.title,
+         r.file_url,
          r.status,
          r.feedback,
          r.created_at,

@@ -1,6 +1,8 @@
 import express from "express";
 import {
   createReport,
+  createReportPdf,
+  downloadReportPdf,
   submitReport,
   listMyReports,
   getReportDetails,
@@ -9,6 +11,8 @@ import {
   listReportsForValidation
 } from "../../controllers/v2/reportController.js";
 import { authenticate, authorize } from "../../middlewares/authMiddleware.js";
+import { fileUploadLimiter } from "../../middlewares/rateLimit.js";
+import { uploadPdf } from "../../middlewares/uploadMiddleware.js";
 import { validate } from "../../middlewares/validate.js";
 import Joi from "joi";
 
@@ -32,7 +36,16 @@ const validateReportSchema = Joi.object({
 
 // Student endpoints
 router.post("/", authenticate, authorize("student"), validate(createReportSchema), createReport);
+router.post(
+  "/pdf",
+  authenticate,
+  authorize("student"),
+  fileUploadLimiter,
+  uploadPdf.single("pdf"),
+  createReportPdf
+);
 router.get("/my", authenticate, authorize("student"), listMyReports);
+router.get("/:id/pdf", authenticate, authorize("student", "supervisor"), downloadReportPdf);
 router.patch("/:id", authenticate, authorize("student"), validate(updateReportSchema), updateReport);
 router.patch("/:id/submit", authenticate, authorize("student"), submitReport);
 
